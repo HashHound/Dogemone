@@ -153,10 +153,9 @@ add_dependencies(PaymentGate version)
 add_dependencies(CryptoNoteCore version)
 add_dependencies(InProcessNode version)
 
-set_property(TARGET Daemon PROPERTY OUTPUT_NAME "karbowanecd")
+set_property(TARGET Daemon PROPERTY OUTPUT_NAME "dogemoned")
 set_property(TARGET SimpleWallet PROPERTY OUTPUT_NAME "simplewallet")
 set_property(TARGET GreenWallet PROPERTY OUTPUT_NAME "greenwallet")
 set_property(TARGET Optimizer PROPERTY OUTPUT_NAME "optimizer")
 set_property(TARGET PaymentGateService PROPERTY OUTPUT_NAME "walletd")
 set_property(TARGET AddressGenerator PROPERTY OUTPUT_NAME "vanitygen")
-
