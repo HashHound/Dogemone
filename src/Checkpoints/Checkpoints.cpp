@@ -43,7 +43,7 @@ using namespace Logging;
 namespace CryptoNote {
 //---------------------------------------------------------------------------
 Checkpoints::Checkpoints(Logging::ILogger &log, bool is_deep_reorg_allowed) : logger(log, "checkpoints"), m_is_deep_reorg_allowed(is_deep_reorg_allowed) {
-  
+
 }
 //---------------------------------------------------------------------------
 bool Checkpoints::add_checkpoint(uint32_t height, const std::string &hash_str) {
@@ -152,8 +152,13 @@ std::vector<uint32_t> Checkpoints::getCheckpointHeights() const {
 //---------------------------------------------------------------------------
 bool Checkpoints::load_checkpoints_from_dns()
 {
-  std::string domain(CryptoNote::DNS_CHECKPOINTS_HOST);
-  std::vector<std::string>records;
+  std::string domain(CryptoNote::parameters::DNS_CHECKPOINTS_HOST); // Ensure correct namespace
+  if (domain.empty()) {
+    logger(Logging::DEBUGGING) << "DNS checkpoints are not configured.";
+    return true; // Continue without DNS checkpoints
+  }
+
+  std::vector<std::string> records;
   bool res = true;
   auto start = std::chrono::steady_clock::now();
   logger(Logging::DEBUGGING) << "Fetching DNS checkpoint records from " << domain;
@@ -170,8 +175,7 @@ bool Checkpoints::load_checkpoints_from_dns()
     if (status == std::future_status::timeout) {
       logger(Logging::DEBUGGING) << "Timeout lookup DNS checkpoint records from " << domain;
       return false;
-    }
-    else if (status == std::future_status::ready) {
+    } else if (status == std::future_status::ready) {
       future.get();
     }
   }
