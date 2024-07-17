@@ -206,7 +206,7 @@ void PaymentGateService::runInProcess(Logging::LoggerRef& log) {
   for (const auto& cp : CryptoNote::CHECKPOINTS) {
     checkpoints.add_checkpoint(cp.height, cp.blockId);
   }
-  checkpoints.load_checkpoints_from_dns();
+  //checkpoints.load_checkpoints_from_dns();
   if (!config.gateConfiguration.testnet) {
     core.set_checkpoints(std::move(checkpoints));
   }
@@ -276,7 +276,7 @@ void PaymentGateService::runRpcProxy(Logging::LoggerRef& log) {
     Logging::LoggerRef(logger, "run")(Logging::ERROR, Logging::BRIGHT_RED) << "Failed to parse daemon address: " << _daemon_address;
     return;
   }
-  
+
   std::unique_ptr<CryptoNote::INode> node(
     PaymentService::NodeFactory::createNode(
       config.remoteNodeConfig.m_daemon_host,
