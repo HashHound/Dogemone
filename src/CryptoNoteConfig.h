@@ -134,7 +134,7 @@ const char MINER_CONFIG_FILE_NAME[] = "miner_conf.json";
 
 const char CRYPTONOTE_NAME[] = "dogemone";
 const char CRYPTONOTE_TICKER[] = "DME";
-const char GENESIS_COINBASE_TX_HEX[] =
+const char GENESIS_COINBASE_TX_HEX[] = ;
 //"01" // tx version
 //"0a" // unlock time
 //"01" // vin length
@@ -147,7 +147,8 @@ const char GENESIS_COINBASE_TX_HEX[] =
 //"21" // extra length in bytes
 //"01" // extra pubkey tag
 //"f904925cc23f86f9f3565188862275dc556a9bdfb6aec22c5aca7f0177c45ba8"; // tx pubkey
-const char DNS_CHECKPOINTS_HOST[] = "checkpoints.karbo.org";
+
+const char DNS_CHECKPOINTS_HOST[] = "";
 
 const uint8_t CURRENT_TRANSACTION_VERSION = 1;
 const uint8_t BLOCK_MAJOR_VERSION_1 = 1;
