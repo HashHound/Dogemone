@@ -153,8 +153,8 @@ namespace CryptoNote {
 	}
 
 	uint64_t Currency::calculateReward(uint64_t alreadyGeneratedCoins) const {
-    const uint64_t FIXED_BLOCK_REWARD = 57 * COIN + (6 * COIN / 10); // 57.06 coins in atomic units
-    const uint64_t TAIL_EMISSION_REWARD = 0.3 * COIN; // Tail emission reward in atomic units
+    const uint64_t FIXED_BLOCK_REWARD = 57 * CryptoNote::parameters::COIN + (6 * CryptoNote::parameters::COIN / 10); // 57.06 coins in atomic units
+    const uint64_t TAIL_EMISSION_REWARD = 0.3 * CryptoNote::parameters::COIN; // Tail emission reward in atomic units
 
     if (alreadyGeneratedCoins >= m_moneySupply) {
         return TAIL_EMISSION_REWARD; // Tail emission phase
@@ -236,9 +236,9 @@ bool Currency::getBlockReward(uint8_t blockMajorVersion, size_t medianSize, size
     AccountPublicAddress recipientAddress;
 
     // Check if the current block height is a multiple of the developer fee interval
-    if (height % DEVELOPER_FEE_INTERVAL == 0) {
+    if (height % CryptoNote::parameters::DEVELOPER_FEE_INTERVAL == 0) {
         // Send reward to developer address
-        if (!parseAccountAddressString(DEVELOPER_ADDRESS, recipientAddress)) {
+        if (!parseAccountAddressString(CryptoNote::parameters::DEVELOPER_ADDRESS, recipientAddress)) {
             logger(ERROR, BRIGHT_RED) << "Failed to parse developer address";
             return false;
         }
