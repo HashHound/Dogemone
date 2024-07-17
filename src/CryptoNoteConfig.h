@@ -147,7 +147,7 @@ const char GENESIS_COINBASE_TX_HEX[] =
 //"21" // extra length in bytes
 //"01" // extra pubkey tag
 //"f904925cc23f86f9f3565188862275dc556a9bdfb6aec22c5aca7f0177c45ba8"; // tx pubkey
-const char DNS_CHECKPOINTS_HOST[] = "DNS.Dogemone.com";
+const char DNS_CHECKPOINTS_HOST[] = "checkpoints.karbo.org";
 
 const uint8_t CURRENT_TRANSACTION_VERSION = 1;
 const uint8_t BLOCK_MAJOR_VERSION_1 = 1;
