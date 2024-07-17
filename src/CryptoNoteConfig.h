@@ -134,7 +134,7 @@ const char MINER_CONFIG_FILE_NAME[] = "miner_conf.json";
 
 const char CRYPTONOTE_NAME[] = "dogemone";
 const char CRYPTONOTE_TICKER[] = "DME";
-const char GENESIS_COINBASE_TX_HEX[] = ;
+const char GENESIS_COINBASE_TX_HEX[] = "";
 //"01" // tx version
 //"0a" // unlock time
 //"01" // vin length
