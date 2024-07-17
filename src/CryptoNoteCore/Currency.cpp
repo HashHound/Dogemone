@@ -96,7 +96,7 @@ namespace CryptoNote {
     m_genesisBlock = boost::value_initialized<Block>();
 
     // Hard code coinbase tx in genesis block
-    std::string genesisCoinbaseTxHex = CryptoNote::parameters::GENESIS_COINBASE_TX_HEX;
+    std::string genesisCoinbaseTxHex = m_testnet ? CryptoNote::parameters::TESTNET_GENESIS_COINBASE_TX_HEX : CryptoNote::parameters::GENESIS_COINBASE_TX_HEX;
     BinaryArray minerTxBlob;
 
     bool r =
@@ -110,7 +110,7 @@ namespace CryptoNote {
 
     m_genesisBlock.majorVersion = BLOCK_MAJOR_VERSION_1;
     m_genesisBlock.minorVersion = BLOCK_MINOR_VERSION_0;
-    m_genesisBlock.timestamp = CryptoNote::parameters::GENESIS_BLOCK_TIMESTAMP;
+    m_genesisBlock.timestamp = m_testnet ? CryptoNote::parameters::TESTNET_GENESIS_BLOCK_TIMESTAMP : CryptoNote::parameters::GENESIS_BLOCK_TIMESTAMP;
     m_genesisBlock.nonce = 70;
     if (m_testnet) {
         ++m_genesisBlock.nonce;
