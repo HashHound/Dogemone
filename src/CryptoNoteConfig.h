@@ -48,15 +48,17 @@ const size_t BLOCKCHAIN_TIMESTAMP_CHECK_WINDOW = 60;
 const size_t BLOCKCHAIN_TIMESTAMP_CHECK_WINDOW_V1 = 11;
 
 // MONEY_SUPPLY - total number coins to be generated
-const uint64_t MONEY_SUPPLY = UINT64_C(300000000000000000); // 300 million coins
+const uint64_t MONEY_SUPPLY = UINT64_C(300000000000000000); // 300 million coins in atomic units
 const uint64_t COIN = UINT64_C(1000000000000); // 1 coin = 10^12 atomic units
-const uint64_t TAIL_EMISSION_REWARD = UINT64_C(3000000000000); // 3 coins per tail emission
-const uint64_t GENESIS_PREMINE_AMOUNT = 30000000000 * 1000000000000ULL; // 30 million coins
+const uint64_t FIXED_BLOCK_REWARD = 57 * COIN + (6 * COIN / 10); // 57.06 coins in atomic units
+const uint64_t TAIL_EMISSION_REWARD = 0.3 * COIN; // 0.3 coins in atomic units
+const uint64_t DEVELOPER_FEE_INTERVAL = 10; // One out of every 10 blocks
+const std::string DEVELOPER_ADDRESS = "dmeUv7tgJW56TSHJZdesh9jVaVefLXTh6GC7AAb9anC5KPpGs9YhWUD4eGcTsRcwuzibx67C2ngc1MHxdU7noWeL9HvoygKk1Q";
 const uint64_t GENESIS_BLOCK_TIMESTAMP = 1724697600; // Timestamp for August 26th
 const char GENESIS_COINBASE_TX_HEX[] = "010a01ff000189a39ae8a908029b2e4c0281c0b02e7c53291a94d1d0cbff8883f8024f5142ee494ffbbd08807121013578fdfa567c57dbe214eefd0f0c4220b5fbd4bd193ff2e2fb7c39e186609c34"; // Replace with actual hex
 
 const uint64_t TESTNET_GENESIS_BLOCK_TIMESTAMP = 1609459200; // Example timestamp for January 1, 2021
-const char TESTNET_GENESIS_COINBASE_TX_HEX[] = "010a01ff000189a39ae8a908029b2e4c0281c0b02e7c53291a94d1d0cbff8883f8024f5142ee494ffbbd08807121013578fdfa567c57dbe214eefd0f0c4220b5fbd4bd193ff2e2fb7c39e186609c34";
+const char TESTNET_GENESIS_COINBASE_TX_HEX[] = "010a01ff000189a39ae8a908029b2e4c0281c0b02e7c53291a94d1d0cbff8883f8024f5142ee494ffbbd0880712101a587743dca16032031c27b35df7afda3b4d4ff54ca15f3501bfccf6424a556db";
 
 
 const size_t CRYPTONOTE_COIN_VERSION = 1;
