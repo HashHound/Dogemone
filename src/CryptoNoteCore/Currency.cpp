@@ -221,6 +221,8 @@ bool Currency::getBlockReward(uint8_t blockMajorVersion, size_t medianSize, size
         return false;
     }
 
+    logger(INFO) << "Calculated block reward: " << formatAmount(blockReward);
+
     std::vector<uint64_t> outAmounts;
     decompose_amount_into_digits(blockReward, UINT64_C(0),
         [&outAmounts](uint64_t a_chunk) { outAmounts.push_back(a_chunk); },
