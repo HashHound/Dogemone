@@ -53,6 +53,8 @@ const uint64_t COIN = UINT64_C(1000000000000); // 1 coin = 10^12 atomic units
 const uint64_t TAIL_EMISSION_REWARD = UINT64_C(3000000000000); // 3 coins per tail emission
 const uint64_t GENESIS_PREMINE_AMOUNT = 30000000000 * 1000000000000ULL; // 30 million coins
 const uint64_t GENESIS_BLOCK_TIMESTAMP = 1724697600; // Timestamp for August 26th
+const char GENESIS_COINBASE_TX_HEX[] = "010a01ff000189a39ae8a908029b2e4c0281c0b02e7c53291a94d1d0cbff8883f8024f5142ee494ffbbd08807121013578fdfa567c57dbe214eefd0f0c4220b5fbd4bd193ff2e2fb7c39e186609c34"; // Replace with actual hex
+
 const size_t CRYPTONOTE_COIN_VERSION = 1;
 const unsigned EMISSION_SPEED_FACTOR = 20; // Adjusted emission speed factor
 static_assert(EMISSION_SPEED_FACTOR <= 8 * sizeof(uint64_t), "Bad EMISSION_SPEED_FACTOR");
@@ -137,21 +139,8 @@ const char MINER_CONFIG_FILE_NAME[] = "miner_conf.json";
 
 const char CRYPTONOTE_NAME[] = "dogemone";
 const char CRYPTONOTE_TICKER[] = "DME";
-const char GENESIS_COINBASE_TX_HEX[] = "";
-//"01" // tx version
-//"0a" // unlock time
-//"01" // vin length
-//"ff" // vin type
-//"00" // height
-//"01" // vout length
-//"fac484c69cd608" // output #1 amount
-//"02" // output #1 type
-//"9b2e4c0281c0b02e7c53291a94d1d0cbff8883f8024f5142ee494ffbbd088071" // output #1 key (stealth address)
-//"21" // extra length in bytes
-//"01" // extra pubkey tag
-//"f904925cc23f86f9f3565188862275dc556a9bdfb6aec22c5aca7f0177c45ba8"; // tx pubkey
+// const char GENESIS_COINBASE_TX_HEX[] = "your_genesis_coinbase_tx_hex_here"; // Replace with actual hex
 
-//const char DNS_CHECKPOINTS_HOST[] = "";
 const static boost::uuids::uuid CRYPTONOTE_NETWORK = { {
     0x12, 0x3e, 0x45, 0x67, 0xe8, 0x9b, 0x12, 0xd3,
     0xa4, 0x56, 0x42, 0x66, 0x14, 0x17, 0x40, 0x00
