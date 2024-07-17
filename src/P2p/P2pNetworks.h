@@ -22,14 +22,11 @@
 
 #pragma once
 
-namespace CryptoNote
-{
-	namespace
-	{
-		boost::uuids::uuid name;
-		boost::uuids::name_generator gen(name);
-		boost::uuids::uuid u = gen(GENESIS_COINBASE_TX_HEX);
-	}
-	const static boost::uuids::uuid CRYPTONOTE_NETWORK = u;
-}
+namespace CryptoNote {
 
+const static boost::uuids::uuid CRYPTONOTE_NETWORK = { {
+    0x12, 0x3e, 0x45, 0x67, 0xe8, 0x9b, 0x12, 0xd3,
+    0xa4, 0x56, 0x42, 0x66, 0x14, 0x17, 0x40, 0x00
+} };
+
+}

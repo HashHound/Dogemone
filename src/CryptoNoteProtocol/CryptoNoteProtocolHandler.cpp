@@ -72,7 +72,7 @@ CryptoNoteProtocolHandler::CryptoNoteProtocolHandler(const Currency& currency, S
   m_dandelionStemFluffInterval(CryptoNote::parameters::DANDELION_STEM_EMBARGO),
   logger(log, "protocol"),
   m_stemPool() {
-  
+
   if (!m_p2p) {
     m_p2p = &m_p2p_stub;
   }
@@ -435,13 +435,13 @@ int CryptoNoteProtocolHandler::handle_request_get_objects(int command, NOTIFY_RE
   logger(Logging::TRACE) << context << "Received NOTIFY_REQUEST_GET_OBJECTS";
 
   /* Essentially, one can send such a large amount of IDs that core exhausts
-   * all free memory. Credits to 'cryptozoidberg', 'moneromooo'. 
+   * all free memory. Credits to 'cryptozoidberg', 'moneromooo'.
    * Referencing HackerOne report #506595.
    */
   if (arg.blocks.size() + arg.txs.size() > CURRENCY_PROTOCOL_MAX_OBJECT_REQUEST_COUNT)
   {
-    logger(Logging::ERROR) << context << 
-      "Requested objects count (" << arg.blocks.size() 
+    logger(Logging::ERROR) << context <<
+      "Requested objects count (" << arg.blocks.size()
       << " blocks + " << arg.txs.size() << " txs) exceeded the limit of "
       << CURRENCY_PROTOCOL_MAX_OBJECT_REQUEST_COUNT << ", dropping connection";
     m_p2p->drop_connection(context, true);
@@ -657,8 +657,8 @@ bool CryptoNoteProtocolHandler::select_dandelion_stem() {
 
   std::vector<CryptoNoteConnectionContext> alive_peers;
   m_p2p->for_each_connection([&](const CryptoNoteConnectionContext& ctx, PeerIdType peer_id) {
-    if ((ctx.m_state == CryptoNoteConnectionContext::state_normal || 
-         ctx.m_state == CryptoNoteConnectionContext::state_synchronizing) && 
+    if ((ctx.m_state == CryptoNoteConnectionContext::state_normal ||
+         ctx.m_state == CryptoNoteConnectionContext::state_synchronizing) &&
         !ctx.m_is_income && ctx.version >= P2P_VERSION_4) {
       alive_peers.push_back(ctx);
     }
@@ -707,7 +707,7 @@ bool CryptoNoteProtocolHandler::fluffStemPool() {
   else {
     logger(Logging::DEBUGGING) << "Nothing to broadcast in fluff mode...";
   }
-  
+
   return true;
 }
 
@@ -901,7 +901,7 @@ bool CryptoNoteProtocolHandler::request_missing_objects(CryptoNoteConnectionCont
         << "\r\nm_last_response_height=" << context.m_last_response_height
         << "\r\nm_remote_blockchain_height=" << context.m_remote_blockchain_height
         << "\r\nm_needed_objects.size()=" << context.m_needed_objects.size()
-        << "\r\nm_requested_objects.size()=" << context.m_requested_objects.size() 
+        << "\r\nm_requested_objects.size()=" << context.m_requested_objects.size()
         << "\r\non connection [" << context << "]";
       return false;
     }
@@ -1068,7 +1068,7 @@ void CryptoNoteProtocolHandler::relay_block(NOTIFY_NEW_BLOCK::request& arg) {
   // sort the peers into their support categories
   m_p2p->for_each_connection([this, &liteBlockConnections, &normalBlockConnections](
     const CryptoNoteConnectionContext &ctx, uint64_t peerId) {
-    if (ctx.version >= P2P_LITE_BLOCKS_PROPOGATION_VERSION) {
+    if (ctx.version >= CryptoNote::parameters::P2P_LITE_BLOCKS_PROPAGATION_VERSION) {
       logger(Logging::DEBUGGING) << ctx << "Peer supports lite-blocks... adding peer to lite block list";
       liteBlockConnections.push_back(ctx.m_connection_id);
     } else {

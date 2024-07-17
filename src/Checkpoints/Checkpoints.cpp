@@ -35,7 +35,6 @@
 #include "Checkpoints.h"
 #include "../CryptoNoteConfig.h"
 #include "Common/StringTools.h"
-#include "Common/DnsTools.h"
 
 using namespace Logging;
 #undef ERROR
@@ -148,6 +147,9 @@ std::vector<uint32_t> Checkpoints::getCheckpointHeights() const {
 
   return checkpointHeights;
 }
+
+// Completely remove the DNS checkpoint loading function
+/*
 #ifndef __ANDROID__
 //---------------------------------------------------------------------------
 bool Checkpoints::load_checkpoints_from_dns()
@@ -213,4 +215,6 @@ bool Checkpoints::load_checkpoints_from_dns()
   return true;
 }
 #endif
+*/
+
 }

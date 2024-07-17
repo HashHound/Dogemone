@@ -148,7 +148,11 @@ const char GENESIS_COINBASE_TX_HEX[] = "";
 //"01" // extra pubkey tag
 //"f904925cc23f86f9f3565188862275dc556a9bdfb6aec22c5aca7f0177c45ba8"; // tx pubkey
 
-const char DNS_CHECKPOINTS_HOST[] = "";
+//const char DNS_CHECKPOINTS_HOST[] = "";
+const static boost::uuids::uuid CRYPTONOTE_NETWORK = { {
+    0x12, 0x3e, 0x45, 0x67, 0xe8, 0x9b, 0x12, 0xd3,
+    0xa4, 0x56, 0x42, 0x66, 0x14, 0x17, 0x40, 0x00
+} };
 
 const uint8_t CURRENT_TRANSACTION_VERSION = 1;
 const uint8_t BLOCK_MAJOR_VERSION_1 = 1;
