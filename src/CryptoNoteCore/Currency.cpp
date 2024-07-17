@@ -93,32 +93,31 @@ namespace CryptoNote {
 	}
 
 	bool Currency::generateGenesisBlock() {
-		m_genesisBlock = boost::value_initialized<Block>();
+    m_genesisBlock = boost::value_initialized<Block>();
 
-		// Hard code coinbase tx in genesis block, because "tru" generating tx use random, but genesis should be always the same
-		std::string genesisCoinbaseTxHex = GENESIS_COINBASE_TX_HEX;
-		BinaryArray minerTxBlob;
+    // Hard code coinbase tx in genesis block
+    std::string genesisCoinbaseTxHex = CryptoNote::parameters::GENESIS_COINBASE_TX_HEX;
+    BinaryArray minerTxBlob;
 
-		bool r =
-			fromHex(genesisCoinbaseTxHex, minerTxBlob) &&
-			fromBinaryArray(m_genesisBlock.baseTransaction, minerTxBlob);
+    bool r =
+        fromHex(genesisCoinbaseTxHex, minerTxBlob) &&
+        fromBinaryArray(m_genesisBlock.baseTransaction, minerTxBlob);
 
-		if (!r) {
-			logger(ERROR, BRIGHT_RED) << "failed to parse coinbase tx from hard coded blob";
-			return false;
-		}
+    if (!r) {
+        logger(ERROR, BRIGHT_RED) << "failed to parse coinbase tx from hard coded blob";
+        return false;
+    }
 
-		m_genesisBlock.majorVersion = BLOCK_MAJOR_VERSION_1;
-		m_genesisBlock.minorVersion = BLOCK_MINOR_VERSION_0;
-		m_genesisBlock.timestamp = 0;
-		m_genesisBlock.nonce = 70;
-		if (m_testnet) {
-			++m_genesisBlock.nonce;
-		}
-		//miner::find_nonce_for_given_block(bl, 1, 0);
+    m_genesisBlock.majorVersion = BLOCK_MAJOR_VERSION_1;
+    m_genesisBlock.minorVersion = BLOCK_MINOR_VERSION_0;
+    m_genesisBlock.timestamp = CryptoNote::parameters::GENESIS_BLOCK_TIMESTAMP;
+    m_genesisBlock.nonce = 70;
+    if (m_testnet) {
+        ++m_genesisBlock.nonce;
+    }
 
-		return true;
-	}
+    return true;
+}
 
 	size_t Currency::blockGrantedFullRewardZoneByBlockVersion(uint8_t blockMajorVersion) const {
 		if (blockMajorVersion >= BLOCK_MAJOR_VERSION_3) {
@@ -518,7 +517,7 @@ namespace CryptoNote {
 		difficulty_type totalWork = cumulativeDifficulties.back() - cumulativeDifficulties.front();
 		assert(totalWork > 0);
 
-		// uint64_t nextDiffZ = totalWork * m_difficultyTarget / timeSpan; 
+		// uint64_t nextDiffZ = totalWork * m_difficultyTarget / timeSpan;
 
 		uint64_t low, high;
 		low = mul128(totalWork, m_difficultyTarget, &high);
@@ -543,7 +542,7 @@ namespace CryptoNote {
 		// LWMA difficulty algorithm
 		// Copyright (c) 2017-2018 Zawy
 		// MIT license http://www.opensource.org/licenses/mit-license.php.
-		// This is an improved version of Tom Harding's (Deger8) "WT-144"  
+		// This is an improved version of Tom Harding's (Deger8) "WT-144"
 		// Karbowanec, Masari, Bitcoin Gold, and Bitcoin Cash have contributed.
 		// See https://github.com/zawy12/difficulty-algorithms/issues/1 for other algos.
 		// Do not use "if solvetime < 0 then solvetime = 1" which allows a catastrophic exploit.
@@ -591,7 +590,7 @@ namespace CryptoNote {
 		harmonic_mean_D = N / sum_inverse_D * adjust;
 		nextDifficulty = harmonic_mean_D * T / LWMA;
 		next_difficulty = static_cast<uint64_t>(nextDifficulty);
-		
+
 		// minimum limit
 		if (!isTestnet() && next_difficulty < 100000) {
 			next_difficulty = 100000;
@@ -609,7 +608,7 @@ namespace CryptoNote {
 	difficulty_type Currency::nextDifficultyV4(uint32_t height, uint8_t blockMajorVersion,
 		std::vector<std::uint64_t> timestamps, std::vector<difficulty_type> cumulativeDifficulties) const {
 
-		// LWMA-2 / LWMA-3 difficulty algorithm 
+		// LWMA-2 / LWMA-3 difficulty algorithm
 		// Copyright (c) 2017-2018 Zawy, MIT License
 		// https://github.com/zawy12/difficulty-algorithms/issues/3
 		// with modifications by Ryo Currency developers
@@ -624,7 +623,7 @@ namespace CryptoNote {
 		int64_t max_TS, prev_max_TS;
 		prev_max_TS = timestamps[0];
 		uint32_t lwma3_height = CryptoNote::parameters::UPGRADE_HEIGHT_V4_1;
-		
+
 		for (int64_t i = 1; i <= N; i++) {
 			if (height < lwma3_height) { // LWMA-2
 				ST = clamp(-6 * T, int64_t(timestamps[i]) - int64_t(timestamps[i - 1]), 6 * T);
@@ -666,7 +665,7 @@ namespace CryptoNote {
   difficulty_type Currency::nextDifficultyV5(uint32_t height, uint8_t blockMajorVersion,
     std::vector<std::uint64_t> timestamps, std::vector<difficulty_type> cumulativeDifficulties) const {
 
-    // LWMA-1 difficulty algorithm 
+    // LWMA-1 difficulty algorithm
     // Copyright (c) 2017-2018 Zawy, MIT License
     // See commented link below for required config file changes. Fix FTL and MTP.
     // https://github.com/zawy12/difficulty-algorithms/issues/3
