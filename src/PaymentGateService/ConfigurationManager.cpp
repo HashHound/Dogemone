@@ -22,7 +22,7 @@
 
 #include "Common/CommandLine.h"
 #include "Common/Util.h"
-#include "version.h"
+//#include "version.h"
 
 namespace PaymentService {
 
@@ -78,7 +78,7 @@ bool ConfigurationManager::init(int argc, char** argv) {
   }
 
   if (cmdOptions.count("version") > 0) {
-    std::cout << "walletd v" << PROJECT_VERSION_LONG;
+    std::cout << "walletd v" << "1.0";
     return false;
   }
 

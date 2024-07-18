@@ -20,7 +20,7 @@
 // along with Dogemone.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "RpcServer.h"
-#include "version.h"
+//#include "version.h"
 
 #include <future>
 #include <unordered_map>
@@ -61,7 +61,7 @@ const std::string program_name = boost::dll::program_location().filename().strin
 const std::string index_start =
 R"(<!DOCTYPE html><html><head><meta http-equiv='refresh' content='60'/><style>* { font-family: monospace; } .wrap { word-break: break-all; word-wrap: break-word; } table.counter tbody tr td:first-child { text-align: right; }</style></head><body><svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" version="1.1" style="vertical-align:middle; padding-right: 10px; shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd" viewBox="0 0 2500000 2500000" xmlns:xlink="http://www.w3.org/1999/xlink" width="64px" height="64px">
 <g><circle fill="#0AACFC" cx="1250000" cy="1250000" r="1214062" /><path fill="#FFED00" d="M1251219 1162750c18009,-3203 34019,-10006 48025,-20412 14009,-10407 27215,-28016 39622,-52029l275750 -538290c10803,-18010 24012,-32419 39218,-43625 15210,-10806 33219,-16410 53232,-16410l174893 0 -343384 633144c-15209,26016 -32419,47228 -51628,63635 -19613,16409 -41225,28815 -64838,37221 36822,9604 67638,25213 92854,47225 24812,21610 48425,52025 70437,91247l330578 668363 -192503 0c-38822,0 -70041,-21213 -93653,-63235l-270947 -566303c-14006,-25215 -29216,-43225 -45622,-54034 -16409,-10803 -37222,-17206 -62034,-18809l0 287359 -151281 0 0 -288559 -111263 0 0 703581 -213716 0 0 -1540835 213716 0 0 673166 111263 0 0 -332981 151281 0 0 330581z"/></g></svg>
-)" + program_name + R"( core v. )" PROJECT_VERSION_LONG R"( &bull; )";
+)" + program_name + R"( core v. unknown &bull; )";
 
 const std::string index_finish = " </body></html>";
 
@@ -190,7 +190,7 @@ std::unordered_map<std::string, RpcServer::RpcHandler<RpcServer::HandlerFunction
   { "/get_transaction_details_by_heights", { jsonMethod<COMMAND_RPC_GET_TRANSACTIONS_DETAILS_BY_HEIGHTS>(&RpcServer::on_get_transactions_details_by_heights), true } },
   { "/get_raw_transactions_by_heights", { jsonMethod<COMMAND_RPC_GET_TRANSACTIONS_WITH_OUTPUT_GLOBAL_INDEXES_BY_HEIGHTS>(&RpcServer::on_get_transactions_with_output_global_indexes_by_heights), true } },
   { "/get_transaction_hashes_by_payment_id", { jsonMethod<COMMAND_RPC_GET_TRANSACTION_HASHES_BY_PAYMENT_ID>(&RpcServer::on_get_transaction_hashes_by_paymentid), true } },
-  
+
   // disabled in restricted rpc mode
   { "/start_mining", { jsonMethod<COMMAND_RPC_START_MINING>(&RpcServer::on_start_mining), false } },
   { "/stop_mining", { jsonMethod<COMMAND_RPC_STOP_MINING>(&RpcServer::on_stop_mining), false } },
@@ -462,7 +462,7 @@ void RpcServer::processRequest(const httplib::Request& request, httplib::Respons
         std::string block_method = "/explorer/block/";
         std::string tx_method = "/explorer/tx/";
         std::string payment_id_method = "/explorer/payment_id/";
-        
+
         if (Common::starts_with(url, block_method)) {
           std::string hash_str = url.substr(block_method.size());
           if (hash_str.size() < 64) {
@@ -495,7 +495,7 @@ void RpcServer::processRequest(const httplib::Request& request, httplib::Respons
 
         if (Common::starts_with(url, tx_method)) {
           std::string hash_str = url.substr(tx_method.size());
-          
+
           COMMAND_EXPLORER_GET_TRANSACTION_DETAILS_BY_HASH::request req;
           req.hash = hash_str;
           COMMAND_EXPLORER_GET_TRANSACTION_DETAILS_BY_HASH::response rsp;
@@ -588,7 +588,7 @@ bool RpcServer::processJsonRpcRequest(const httplib::Request& request, httplib::
     response.set_header("Access-Control-Allow-Origin", m_cors_domain);
     response.set_header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     response.set_header("Access-Control-Allow-Methods", "POST, GET");
-  }  
+  }
 
   JsonRpcRequest jsonRequest;
   JsonRpcResponse jsonResponse;
@@ -599,7 +599,7 @@ bool RpcServer::processJsonRpcRequest(const httplib::Request& request, httplib::
     jsonResponse.setId(jsonRequest.getId()); // copy id
 
     static std::unordered_map<std::string, RpcServer::RpcHandler<JsonMemberMethod>> jsonRpcHandlers = {
-  
+
       { "getblockcount", { makeMemberMethod(&RpcServer::on_getblockcount), true } },
       { "getblockhash", { makeMemberMethod(&RpcServer::on_getblockhash), true } },
       { "getblocktemplate", { makeMemberMethod(&RpcServer::on_getblocktemplate), true } },
@@ -804,7 +804,7 @@ bool RpcServer::on_get_random_outs_bin(const COMMAND_RPC_GET_RANDOM_OUTPUTS_FOR_
 
 bool RpcServer::on_get_random_outs_json(const COMMAND_RPC_GET_RANDOM_OUTPUTS_FOR_AMOUNTS_JSON::request& req, COMMAND_RPC_GET_RANDOM_OUTPUTS_FOR_AMOUNTS_JSON::response& res) {
   res.status = "Failed";
-  
+
   COMMAND_RPC_GET_RANDOM_OUTPUTS_FOR_AMOUNTS::response bin;
 
   if (!m_core.get_random_outs_for_amounts(req, bin)) {
@@ -1179,7 +1179,7 @@ bool RpcServer::on_get_transactions_details_by_heights(const COMMAND_RPC_GET_TRA
 bool RpcServer::on_get_transactions_with_output_global_indexes_by_heights(const COMMAND_RPC_GET_TRANSACTIONS_WITH_OUTPUT_GLOBAL_INDEXES_BY_HEIGHTS::request& req, COMMAND_RPC_GET_TRANSACTIONS_WITH_OUTPUT_GLOBAL_INDEXES_BY_HEIGHTS::response& rsp) {
   try {
     std::vector<uint32_t> heights;
-    
+
     if (req.range) {
       if (req.heights.size() != 2) {
         throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_WRONG_PARAM,
@@ -1397,7 +1397,7 @@ bool RpcServer::on_check_payment(const COMMAND_RPC_CHECK_PAYMENT_BY_PAYMENT_ID::
     catch (...)
     {
       throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_INTERNAL_ERROR, "Unknown error" };
-    }  
+    }
   }
 
   rsp.received_amount = received;
@@ -1595,7 +1595,7 @@ bool RpcServer::on_get_explorer(const COMMAND_EXPLORER::request& req, COMMAND_EX
     size_t blokBlobSize = getObjectBinarySize(blk);
     size_t minerTxBlobSize = getObjectBinarySize(blk.baseTransaction);
     uint64_t blockSize = blokBlobSize + tx_cumulative_block_size - minerTxBlobSize;
- 
+
     body += "  <tr>\n";
     body += "    <td>";
     body += std::to_string(i);
@@ -1626,7 +1626,7 @@ bool RpcServer::on_get_explorer(const COMMAND_EXPLORER::request& req, COMMAND_EX
   uint32_t total_pages = top_block_index / print_blocks_count;
   uint32_t next_page = req_height - print_blocks_count;
   uint32_t prev_page = std::min<uint32_t>(req_height + print_blocks_count, top_block_index);
-  
+
   body += "<p>";
   if (curr_page != 0) {
     if (prev_page <= top_block_index - print_blocks_count) {
@@ -1660,7 +1660,7 @@ bool RpcServer::on_explorer_search(const COMMAND_RPC_EXPLORER_SEARCH::request& r
     // assume it's height
     uint32_t height = static_cast<uint32_t>(std::stoul(req.query));
     hash = m_core.getBlockIdByHeight(height);
-  } 
+  }
   else if (!parse_hash256(req.query, hash)) {
     throw JsonRpc::JsonRpcError{
       CORE_RPC_ERROR_CODE_WRONG_PARAM, "Failed to parse query: " + req.query };
@@ -1689,7 +1689,7 @@ bool RpcServer::on_explorer_search(const COMMAND_RPC_EXPLORER_SEARCH::request& r
   }
 
   throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_WRONG_PARAM, "Not found" };
-  
+
   return true;
 }
 
@@ -1994,7 +1994,7 @@ bool RpcServer::on_get_explorer_tx_by_hash(const COMMAND_EXPLORER_GET_TRANSACTIO
       }
       body += "</ol>\n";
     }
-    
+
     body += index_finish;
 
     res = body;
@@ -2071,7 +2071,7 @@ bool RpcServer::on_get_info(const COMMAND_RPC_GET_INFO::request& req, COMMAND_RP
   res.last_known_block_index = std::max(static_cast<uint32_t>(1), m_protocolQuery.getObservedHeight()) - 1;
   Crypto::Hash last_block_hash = m_core.getBlockIdByHeight(res.height - 1);
   res.top_block_hash = Common::podToHex(last_block_hash);
-  res.version = PROJECT_VERSION_LONG;
+  res.version = "unknown";
   res.contact = m_contact_info.empty() ? std::string() : m_contact_info;
   res.min_fee = m_core.getMinimalFee();
   res.start_time = (uint64_t)m_core.getStartTime();
@@ -2265,7 +2265,7 @@ bool RpcServer::on_start_mining(const COMMAND_RPC_START_MINING::request& req, CO
     res.status = "Method disabled";
     return false;
   }
-  
+
   AccountKeys keys = boost::value_initialized<AccountKeys>();
 
   Crypto::Hash key_hash;
@@ -2403,7 +2403,7 @@ bool RpcServer::on_blocks_list_json(const COMMAND_RPC_GET_BLOCKS_LIST::request& 
   uint32_t print_blocks_count = 10;
   if(req.count <= BLOCK_LIST_MAX_COUNT)
     print_blocks_count = req.count;
-  
+
   uint32_t last_height = req.height - print_blocks_count;
   if (req.height <= print_blocks_count)  {
     last_height = 0;
@@ -2570,7 +2570,7 @@ bool RpcServer::on_getblockhash(const COMMAND_RPC_GETBLOCKHASH::request& req, CO
   uint32_t h = static_cast<uint32_t>(req[0]);
   Crypto::Hash blockId = m_core.getBlockIdByHeight(h);
   if (blockId == NULL_HASH) {
-    throw JsonRpc::JsonRpcError{ 
+    throw JsonRpc::JsonRpcError{
       CORE_RPC_ERROR_CODE_TOO_BIG_HEIGHT,
       std::string("To big height: ") + std::to_string(h) + ", current blockchain height = " + std::to_string(m_core.getCurrentBlockchainHeight())
     };
@@ -2718,7 +2718,7 @@ void RpcServer::fill_block_header_response(const Block& blk, bool orphan_status,
 bool RpcServer::on_get_last_block_header(const COMMAND_RPC_GET_LAST_BLOCK_HEADER::request& req, COMMAND_RPC_GET_LAST_BLOCK_HEADER::response& res) {
   uint32_t last_block_height;
   Crypto::Hash last_block_hash;
-  
+
   m_core.get_blockchain_top(last_block_height, last_block_hash);
 
   Block last_block;
@@ -2774,7 +2774,7 @@ bool RpcServer::on_get_block_header_by_height(const COMMAND_RPC_GET_BLOCK_HEADER
     throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_INTERNAL_ERROR,
       "Internal error: can't get block by height. Height = " + std::to_string(req.height) + '.' };
   }
-  
+
   Crypto::Hash tmp_hash = m_core.getBlockIdByHeight(req.height);
   bool is_orphaned = block_hash != tmp_hash;
   fill_block_header_response(blk, is_orphaned, req.height, block_hash, res.block_header);
@@ -2836,7 +2836,7 @@ bool RpcServer::on_check_transaction_key(const COMMAND_RPC_CHECK_TRANSACTION_KEY
   {
     throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_WRONG_PARAM, "Failed to generate key derivation from supplied parameters" };
   }
-  
+
   // look for outputs
   uint64_t received(0);
   size_t keyIndex(0);
@@ -2899,7 +2899,7 @@ bool RpcServer::on_check_transaction_with_view_key(const COMMAND_RPC_CHECK_TRANS
   tx = txs.front();
 
   CryptoNote::TransactionPrefix transaction = *static_cast<const TransactionPrefix*>(&tx);
-  
+
   // get tx pub key
   Crypto::PublicKey txPubKey = getTransactionPublicKeyFromExtra(transaction.extra);
 
@@ -2934,7 +2934,7 @@ bool RpcServer::on_check_transaction_with_view_key(const COMMAND_RPC_CHECK_TRANS
   }
   res.amount = received;
   res.outputs = outputs;
-  
+
   Crypto::Hash blockHash;
   uint32_t blockHeight;
   if (m_core.getBlockContainingTx(txid, blockHash, blockHeight)) {
@@ -3050,7 +3050,7 @@ bool RpcServer::on_check_reserve_proof(const COMMAND_RPC_CHECK_RESERVE_PROOF::re
   if (!m_core.currency().parseAccountAddressString(req.address, address)) {
     throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_WRONG_PARAM, "Failed to parse address " + req.address + '.' };
   }
-  
+
   // parse sugnature
   std::string decoded_data;
   uint64_t prefix;
@@ -3064,7 +3064,7 @@ bool RpcServer::on_check_reserve_proof(const COMMAND_RPC_CHECK_RESERVE_PROOF::re
   }
 
   std::vector<reserve_proof_entry>& proofs = proof_decoded.proofs;
-  
+
   // compute signature prefix hash
   std::string prefix_data = req.message;
   prefix_data.append((const char*)&address, sizeof(CryptoNote::AccountPublicAddress));
@@ -3114,7 +3114,7 @@ bool RpcServer::on_check_reserve_proof(const COMMAND_RPC_CHECK_RESERVE_PROOF::re
     const reserve_proof_entry& proof = proofs[i];
 
     CryptoNote::TransactionPrefix tx = *static_cast<const TransactionPrefix*>(&transactions[i]);
-    
+
     bool unlocked = m_core.is_tx_spendtime_unlocked(tx.unlockTime, req.height);
 
     if (proof.index_in_transaction >= tx.outputs.size()) {
@@ -3171,7 +3171,7 @@ bool RpcServer::on_check_reserve_proof(const COMMAND_RPC_CHECK_RESERVE_PROOF::re
     catch (...)
     {
       throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_INTERNAL_ERROR, "Unknown error" };
-    }  
+    }
   }
 
   // check signature for address spend keys

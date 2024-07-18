@@ -13,7 +13,7 @@
 #include <initializer_list>
 #include <iostream>
 
-#include "version.h"
+//#include "version.h"
 
 #include <Common/UrlTools.h>
 #include <Common/PathTools.h>
@@ -157,7 +157,7 @@ Config parseArguments(int argc, char **argv)
 
 std::string getVersion()
 {
-    return WalletConfig::coinName + " v" + PROJECT_VERSION + " "
+    return WalletConfig::coinName + " v" + "1.0" + " "
          + WalletConfig::walletName;
 }
 

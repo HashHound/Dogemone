@@ -94,7 +94,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CTestCustom.cmake ${CMAKE_CURRENT_BIN
 
 project(Dogemone)
 
-include_directories(include src external "${CMAKE_CURRENT_BINARY_DIR}/version")
+include_directories(include src external)
 
 # Check whether we're on a 32-bit or 64-bit system
 if(CMAKE_SIZEOF_VOID_P EQUAL "8")
@@ -215,7 +215,7 @@ if(STATIC OR IOS)
   include_directories(${UPNP_INCLUDE})
  endif()
 
-if(MSVC)
+ if(MSVC)
   set (CMAKE_MSVC_FLAGS_BASE "/D_CRT_SECURE_NO_WARNINGS /wd4996 /wd4345 /D_WIN32_WINNT=0x0600 /DWIN32_LEAN_AND_MEAN /DGTEST_HAS_TR1_TUPLE=0 /D_VARIADIC_MAX=8 /D__SSE4_1__ /D_NO_CRT_STDIO_INLINE")
   set (CMAKE_MSVC_FLAGS_EXT "/bigobj /MP /W3 /GS-")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_MSVC_FLAGS_BASE} ${CMAKE_MSVC_FLAGS_EXT}")
@@ -260,12 +260,10 @@ else()
   if(MINGW)
     set(WARNINGS "${WARNINGS} -Wno-error=unused-value -Wno-error=unused-but-set-variable")
     set(MINGW_FLAG "-DWIN32_LEAN_AND_MEAN")
-	set(Boost_THREADAPI win32)
     include_directories(SYSTEM src/platform/mingw)
-	# mingw doesn't support LTO (multiple definition errors at link time)
     set(USE_LTO_DEFAULT false)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--stack,10485760")
-	if(NOT BUILD_64)
+    if(NOT BUILD_64)
       add_definitions(-DWINVER=0x0501 -D_WIN32_WINNT=0x0501)
     endif()
   else()
@@ -287,8 +285,6 @@ else()
     set(STATIC_ASSERT_CPP_FLAG "-Dstatic_assert=_Static_assert")
   endif()
 
-  # With GCC 6.1.1 the compiled binary malfunctions due to aliasing. Until that
-  # is fixed in the code (Issue #847), force compiler to be conservative.
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-strict-aliasing")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-strict-aliasing")
 
@@ -319,28 +315,8 @@ else()
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11 -D_GNU_SOURCE ${MINGW_FLAG} ${STATIC_ASSERT_FLAG} ${WARNINGS} ${C_WARNINGS} ${ARCH_FLAG} ${PIC_FLAG}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -D_GNU_SOURCE ${MINGW_FLAG} ${STATIC_ASSERT_CPP_FLAG} ${WARNINGS} ${CXX_WARNINGS} ${ARCH_FLAG} ${PIC_FLAG}")
 
-  # With GCC 6.1.1 the compiled binary malfunctions due to aliasing. Until that
-  # is fixed in the code (Issue #847), force compiler to be conservative.
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-strict-aliasing")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-strict-aliasing")
-
-
   if(ARM)
     message(STATUS "Setting FPU Flags for ARM Processors")
-
-    #NB NEON hardware does not fully implement the IEEE 754 standard for floating-point arithmetic
-    #Need custom assembly code to take full advantage of NEON SIMD
-
-    #Cortex-A5/9  -mfpu=neon-fp16
-    #Cortex-A7/15 -mfpu=neon-vfpv4
-    #Cortex-A8    -mfpu=neon
-    #ARMv8  	  -FP and SIMD on by default for all ARM8v-A series, NO -mfpu setting needed
-
-    #For custom -mtune, processor IDs for ARMv8-A series:
-    #0xd04 - Cortex-A35
-    #0xd07 - Cortex-A57
-    #0xd08 - Cortex-A72
-    #0xd03 - Cortex-A73
 
     if(NOT ARM8)
       CHECK_CXX_ACCEPTS_FLAG(-mfpu=vfp3-d16 CXX_ACCEPTS_VFP3_D16)
@@ -399,11 +375,9 @@ else()
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mfix-cortex-a53-843419")
       endif()
     endif(ARM8)
-
   endif(ARM)
 
   if(ANDROID AND NOT BUILD_GUI_DEPS STREQUAL "ON" OR IOS)
-    #From Android 5: "only position independent executables (PIE) are supported"
     message(STATUS "Enabling PIE executable")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIE")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIE -DANDROID -DBOOST_COROUTINES_NO_DEPRECATION_WARNING")
@@ -433,7 +407,6 @@ else()
   set(USE_LTO ${USE_LTO_DEFAULT} CACHE BOOL "Use Link-Time Optimization (Release mode only)")
 
   if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    # There is a clang bug that does not allow to compile code that uses AES-NI intrinsics if -flto is enabled, so explicitly disable
     set(USE_LTO false)
   endif()
 
@@ -442,10 +415,7 @@ else()
     if(STATIC)
       set(RELEASE_FLAGS "${RELEASE_FLAGS} -ffat-lto-objects")
     endif()
-    # Since gcc 4.9 the LTO format is non-standard (slim), so we need the gcc-specific ar and ranlib binaries
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND NOT (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9.0) AND NOT OPENBSD AND NOT DRAGONFLY)
-      # When invoking cmake on distributions on which gcc's binaries are prefixed
-      # with an arch-specific triplet, the user must specify -DCHOST=<prefix>
       if(DEFINED CHOST)
         set(CMAKE_AR "${CHOST}-gcc-ar")
         set(CMAKE_RANLIB "${CHOST}-gcc-ranlib")
@@ -462,17 +432,12 @@ else()
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${RELEASE_FLAGS}")
 
   if(STATIC)
-    # STATIC already configures most deps to be linked in statically,
-    # here we make more deps static if the platform permits it
     if(MINGW)
-      # On Windows, this is as close to fully-static as we get:
-      # this leaves only deps on /c/Windows/system32/*.dll
       set(STATIC_FLAGS "-static")
     elseif(NOT (APPLE OR FREEBSD OR OPENBSD OR DRAGONFLY))
-      # On Linux, we don't support fully static build, but these can be static
       set(STATIC_FLAGS "-static-libgcc -static-libstdc++")
     endif()
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${STATIC_FLAGS} ")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${STATIC_FLAGS}")
   endif()
 endif()
 
@@ -485,7 +450,6 @@ if(STATIC AND MINGW)
   set(CMAKE_FIND_LIBRARY_SUFFIXES .a)
 endif()
 
-# Link static BOOST libraries everywhere
 set(Boost_NO_BOOST_CMAKE ON)
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_STATIC_RUNTIME ON)
@@ -501,16 +465,13 @@ elseif(Boost_FOUND)
   message(STATUS "Found Boost Version: ${Boost_VERSION}")
 endif()
 
-# Force find_package(OpenSSL) to search the static library
 if(STATIC)
-  set (OPENSSL_USE_STATIC_LIBS ON)
+  set(OPENSSL_USE_STATIC_LIBS ON)
 endif()
 if(MSVC)
   set(OPENSSL_MSVC_STATIC_RT ON)
 endif()
 
-# We have to look for Homebrew OpenSSL a bit differently
-# Borrowed from https://github.com/tarantool/tarantool/commit/6eab201af1843f53a833c8928dc58fceffa08147
 if(APPLE)
   find_program(HOMEBREW_EXECUTABLE brew)
   execute_process(COMMAND ${HOMEBREW_EXECUTABLE} --prefix openssl
@@ -535,7 +496,6 @@ if(NOT OPENSSL_FOUND)
 endif()
 
 if(OPENSSL_FOUND)
-  ## On non MSVC build systems, we need to link ldl with the static OpenSSL library
   if(NOT MSVC AND NOT MINGW)
     set(OPENSSL_LIBRARIES "${OPENSSL_LIBRARIES};dl")
   endif()
@@ -576,7 +536,7 @@ endif()
 
 list(APPEND EXTRA_LIBRARIES ${CMAKE_DL_LIBS})
 
-if(ANDROID AND CMAKE_C_COMPILER_ID STREQUAL "Clang")
+if(ANDROID AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   set(ATOMIC ${BOOST_LIBRARYDIR}/libboost_atomic.a)
   set(THREAD ${BOOST_LIBRARYDIR}/libboost_thread.a)
   find_library(THREAD thread)
@@ -586,8 +546,6 @@ if(ANDROID AND CMAKE_C_COMPILER_ID STREQUAL "Clang")
     list(APPEND EXTRA_LIBRARIES ${ATOMIC})
   endif()
 endif()
-
-include("${CMAKE_CURRENT_SOURCE_DIR}/src/version.cmake")
 
 function (treat_warnings_as_errors dirs)
   foreach(dir ${ARGV})
@@ -606,35 +564,4 @@ option(BUILD_TESTS "Build tests." OFF)
 if(BUILD_TESTS)
   add_subdirectory(tests)
   enable_testing()
-endif()
-
-set(COMMIT_ID_IN_VERSION ON CACHE BOOL "Include commit ID in version")
-file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/version")
-if(NOT COMMIT_ID_IN_VERSION)
-  set(VERSION "${VERSION}-unknown")
-  configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in" "${CMAKE_CURRENT_BINARY_DIR}/version/version.h")
-  add_custom_target(version ALL)
-elseif(DEFINED COMMIT)
-  string(REPLACE "." "\\." VERSION_RE "${VERSION}")
-  if(NOT REFS MATCHES "(\\(|, )tag: v${VERSION_RE}(\\)|, )")
-    set(VERSION "${VERSION}-g${COMMIT}")
-  endif()
-  configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in" "${CMAKE_CURRENT_BINARY_DIR}/version/version.h")
-  add_custom_target(version ALL)
-else()
-  find_package(Git QUIET)
-  if(Git_FOUND OR GIT_FOUND)
-    message(STATUS "Found Git: ${GIT_EXECUTABLE}")
-    add_custom_target(version ALL "${CMAKE_COMMAND}"
-                      "-D" "VERSION=${VERSION}"
-                      "-D" "GIT=${GIT_EXECUTABLE}"
-                      "-D" "TO=${CMAKE_CURRENT_BINARY_DIR}/version/version.h"
-                      "-D" "BUILD_REMARK=${BUILD_REMARK}"
-                      "-P" "${CMAKE_CURRENT_SOURCE_DIR}/src/version.cmake" WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
-  else()
-    message(STATUS "WARNING: Git was not found!")
-    set(VERSION "${VERSION}-unknown")
-    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in" "${CMAKE_CURRENT_BINARY_DIR}/version/version.h")
-    add_custom_target(version ALL)
-  endif()
 endif()

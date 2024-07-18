@@ -28,7 +28,7 @@
 #include "CryptoNoteCore/Core.h"
 #include "CryptoNoteProtocol/CryptoNoteProtocolHandler.h"
 #include "Serialization/SerializationTools.h"
-#include "version.h"
+//#include "version.h"
 #include <boost/format.hpp>
 #include "math.h"
 #include "CryptoNote.h"
@@ -79,7 +79,7 @@ DaemonCommandsHandler::DaemonCommandsHandler(CryptoNote::Core& core, CryptoNote:
 std::string DaemonCommandsHandler::get_commands_str()
 {
   std::stringstream ss;
-  ss << CryptoNote::CRYPTONOTE_NAME << " v" << PROJECT_VERSION_LONG << ENDL;
+  ss << CryptoNote::CRYPTONOTE_NAME << " v" << "1.0" << ENDL;
   ss << "Commands: " << ENDL;
   std::string usage = m_consoleHandler.getUsage();
   boost::replace_all(usage, "\n", "\n  ");
@@ -140,7 +140,7 @@ bool DaemonCommandsHandler::status(const std::vector<std::string>& args) {
   bool synced = ((uint32_t)height == (uint32_t)last_known_block_index);
 
   std::cout << std::endl
-    << (synced ? ColouredMsg("Synced ", Common::Console::Color::BrightGreen) : ColouredMsg("Syncing ", Common::Console::Color::BrightYellow)) 
+    << (synced ? ColouredMsg("Synced ", Common::Console::Color::BrightGreen) : ColouredMsg("Syncing ", Common::Console::Color::BrightYellow))
     << ColouredMsg(std::to_string(height), Common::Console::Color::BrightWhite) << "/" << ColouredMsg(std::to_string(last_known_block_index), Common::Console::Color::BrightWhite)
     << " (" << ColouredMsg(std::to_string(get_sync_percentage(height, last_known_block_index)).substr(0, 5) + "%", Common::Console::Color::BrightWhite) << ") "
     << "on " << ColouredMsg((m_core.currency().isTestnet() ? "testnet" : "mainnet"), Common::Console::Color::BrightWhite) << ", "
@@ -158,7 +158,7 @@ bool DaemonCommandsHandler::status(const std::vector<std::string>& args) {
     << "alt. blocks: " << ColouredMsg(std::to_string(alt_blocks_count), Common::Console::Color::BrightWhite) << ", "
     << "uptime: " << ColouredMsg(Common::timeIntervalToString(uptime), Common::Console::Color::BrightWhite) << "\n"
     << std::endl << std::endl;
-  
+
   return true;
 }
 
@@ -482,4 +482,3 @@ bool DaemonCommandsHandler::unban(const std::vector<std::string>& args)
 bool DaemonCommandsHandler::save(const std::vector<std::string>& args) {
   return m_core.saveBlockchain();
 }
-
