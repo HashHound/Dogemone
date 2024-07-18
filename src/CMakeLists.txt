@@ -1,4 +1,3 @@
-
 add_definitions(-DSTATICLIB)
 
 include_directories(${CMAKE_SOURCE_DIR}/external/linenoise)
@@ -43,7 +42,7 @@ else()
   file(GLOB_RECURSE System System/* Platform/Linux/System/* Platform/Posix/System/*)
 endif()
 
-source_group("" FILES $${Common} ${Checkpoints} ${Crypto} ${CryptoNoteCore} ${CryptoNoteProtocol} ${Daemon} ${GreenWallet} ${Http} ${JsonRpcServer} ${Logging} ${Mnemonics} ${NodeRpcProxy} ${Optimizer} ${P2p} ${Rpc} ${Serialization} ${SimpleWallet} ${System} ${Transfers} ${Wallet} ${WalletLegacy} ${AddressGenerator})
+source_group("" FILES ${Common} ${Checkpoints} ${Crypto} ${CryptoNoteCore} ${CryptoNoteProtocol} ${Daemon} ${GreenWallet} ${Http} ${JsonRpcServer} ${Logging} ${Mnemonics} ${NodeRpcProxy} ${Optimizer} ${P2p} ${Rpc} ${Serialization} ${SimpleWallet} ${System} ${Transfers} ${Wallet} ${WalletLegacy} ${AddressGenerator})
 
 add_library(BlockchainExplorer ${BlockchainExplorer})
 add_library(Checkpoints ${Checkpoints})
@@ -147,12 +146,6 @@ if (FREEBSD)
   target_link_libraries(GreenWallet -lthr)
   target_link_libraries(AddressGenerator -lthr)
 endif()
-
-#add_dependencies(P2P version)
-#add_dependencies(Rpc version)
-#add_dependencies(PaymentGate version)
-#add_dependencies(CryptoNoteCore version)
-#add_dependencies(InProcessNode version)
 
 set_property(TARGET Daemon PROPERTY OUTPUT_NAME "dogemoned")
 set_property(TARGET SimpleWallet PROPERTY OUTPUT_NAME "simplewallet")
