@@ -31,7 +31,7 @@
 #include "CryptoNoteProtocol/CryptoNoteProtocolHandlerCommon.h"
 #include "InProcessNodeErrors.h"
 #include "Common/StringTools.h"
-#include "version.h"
+////#include "version.h"
 
 using namespace Crypto;
 using namespace Common;
@@ -535,7 +535,7 @@ uint64_t InProcessNode::getGreyPeerlistSize() const {
 }
 
 std::string InProcessNode::getNodeVersion() const {
-  return PROJECT_VERSION_LONG;
+  return "Version information not available";
 }
 
 void InProcessNode::peerCountUpdated(size_t count) {
@@ -790,7 +790,7 @@ void InProcessNode::getBlock(const uint32_t blockHeight, BlockDetails &block, co
   std::vector<uint32_t> blockHeights;
   std::vector<std::vector<BlockDetails>> blocks;
   blockHeights.push_back(blockHeight);
- 
+
   getBlocksAsync(blockHeights, blocks, callback);
 
   block = blocks[0][0];

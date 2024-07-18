@@ -84,7 +84,7 @@
 #include "WalletLegacy/WalletHelper.h"
 #include "ITransfersContainer.h"
 
-#include "version.h"
+//#include "version.h"
 
 #if defined(WIN32)
 #include <Windows.h>
@@ -314,7 +314,7 @@ struct TransferCommand {
 #if defined(WIN32)
 #undef max
 #undef min
-#endif 
+#endif
             logger(ERROR, BRIGHT_RED) << "amount is wrong: " << arg << ' ' << value <<
               ", expected number from 0 to " << m_currency.formatAmount(std::numeric_limits<uint64_t>::max());
             return false;
@@ -673,7 +673,7 @@ simple_wallet::simple_wallet(System::Dispatcher& dispatcher, const CryptoNote::C
   m_consoleHandler.setHandler("exit", std::bind(&simple_wallet::exit, this, std::placeholders::_1), "Close wallet");
 
   std::stringstream userAgent;
-  userAgent << "NodeRpcProxy/" << PROJECT_VERSION_LONG;
+  userAgent << "NodeRpcProxy/" << "1.0";
   m_requestHeaders = { {"User-Agent", userAgent.str()}, { "Connection", "keep-alive" } };
 
 }
@@ -693,7 +693,7 @@ bool simple_wallet::set_log(const std::vector<std::string> &args)
     fail_msg_writer() << "wrong number format, use: set_log <log_level_number_0-4>";
     return true;
   }
- 
+
   if (l > Logging::TRACE)
   {
     fail_msg_writer() << "wrong number range, use: set_log <log_level_number_0-4>";
@@ -1968,7 +1968,7 @@ std::string simple_wallet::get_formatted_wallet_keys() {
 //----------------------------------------------------------------------------------------------------
 bool simple_wallet::show_keys(const std::vector<std::string>& args/* = std::vector<std::string>()*/) {
   std::cout << ColouredMsg(get_formatted_wallet_keys(), Common::Console::Color::BrightGreen);
-  
+
   return true;
 }
 //----------------------------------------------------------------------------------------------------
@@ -1994,7 +1994,7 @@ bool simple_wallet::show_tracking_key(const std::vector<std::string>& args/* = s
 
   return true;
 }
-//---------------------------------------------------------------------------------------------------- 
+//----------------------------------------------------------------------------------------------------
 bool simple_wallet::show_balance(const std::vector<std::string>& args/* = std::vector<std::string>()*/) {
   success_msg_writer() << "available: " << m_currency.formatAmount(m_wallet->actualBalance());
   success_msg_writer() << "pending: " << m_currency.formatAmount(m_wallet->pendingBalance());
@@ -2553,12 +2553,12 @@ int main(int argc, char* argv[]) {
       CryptoNote::Currency tmp_currency = CryptoNote::CurrencyBuilder(logManager).currency();
       CryptoNote::simple_wallet tmp_wallet(dispatcher, tmp_currency, logManager);
 
-      std::cout << CRYPTONOTE_NAME << " wallet v" << PROJECT_VERSION_LONG << std::endl;
+      std::cout << CRYPTONOTE_NAME << " wallet v" << "1.0" << std::endl;
       std::cout << "Usage: simplewallet [--wallet-file=<file>|--generate-new-wallet=<file>] [--daemon-address=<host>:<port>] [<COMMAND>]";
       std::cout << desc_all << '\n' << tmp_wallet.get_commands_str();
       return false;
     } else if (command_line::get_arg(vm, command_line::arg_version))  {
-      std::cout << CRYPTONOTE_NAME << " wallet v" << PROJECT_VERSION_LONG;
+      std::cout << CRYPTONOTE_NAME << " wallet v" << "1.0";
       return false;
     }
 
@@ -2605,7 +2605,7 @@ int main(int argc, char* argv[]) {
 
   logManager.configure(buildLoggerConfiguration(logLevel, cfgLogFile));
 
-  logger(INFO, BRIGHT_WHITE) << CRYPTONOTE_NAME << " wallet v" << PROJECT_VERSION_LONG;
+  logger(INFO, BRIGHT_WHITE) << CRYPTONOTE_NAME << " wallet v" << "1.0";
 
   CryptoNote::Currency currency = CryptoNote::CurrencyBuilder(logManager).
     testnet(command_line::get_arg(vm, arg_testnet)).currency();

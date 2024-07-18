@@ -52,7 +52,7 @@ extern "C"
 #include "System/RemoteContext.h"
 #include "CryptoNoteConfig.h"
 #include "CryptoTypes.h"
-#include "version.h"
+//#include "version.h"
 
 using namespace CryptoNote;
 using namespace Logging;
@@ -244,7 +244,7 @@ int main(int argc, char** argv) {
     System::Dispatcher dispatcher;
 
     std::string coinName(CryptoNote::CRYPTONOTE_NAME);
-    std::cout << InformationMsg(coinName + " address generator v. " + std::string(PROJECT_VERSION)) << std::endl;
+    std::cout << InformationMsg(coinName + " address generator v. " + std::string("1.0")) << std::endl;
 
     try {
         po::options_description desc_cmd_only("Available command line options");

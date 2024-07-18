@@ -22,7 +22,7 @@
 #include <string.h>
 
 #include "PaymentGateService.h"
-#include "version.h"
+//#include "version.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -293,7 +293,7 @@ int unregisterService() {
 }
 
 int main(int argc, char** argv) {
-  PaymentGateService pg; 
+  PaymentGateService pg;
   ppg = &pg;
 
   try {
@@ -301,7 +301,7 @@ int main(int argc, char** argv) {
       return 0; //help message requested or so
     }
 
-    Logging::LoggerRef(pg.getLogger(), "main")(Logging::INFO) << "walletd v" << PROJECT_VERSION_LONG;
+    Logging::LoggerRef(pg.getLogger(), "main")(Logging::INFO) << "walletd v" << "1.0";
 
     const auto& config = pg.getConfig();
 
