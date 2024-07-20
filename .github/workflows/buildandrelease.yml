@@ -19,20 +19,21 @@ jobs:
 
       - name: Build
         run: |
-          mkdir build && cd build
+          mkdir -p build && cd build
           cmake .. -DCMAKE_BUILD_TYPE=Release
           make
 
       - name: Archive Release Artifacts
         run: |
-          zip -r ubuntu-20.04-build.zip *
-        working-directory: build/release/src
+          mkdir -p build/release/src
+          mv build/* build/release/src/ || true
+          zip -r ubuntu-20.04-build.zip build/release/src/*
 
       - name: Upload Release Artifacts
         uses: actions/upload-artifact@v2
         with:
           name: ubuntu-20.04-build.zip
-          path: build/release/src/ubuntu-20.04-build.zip
+          path: ubuntu-20.04-build.zip
 
   build-ubuntu-2204:
     runs-on: ubuntu-22.04
@@ -47,20 +48,21 @@ jobs:
 
       - name: Build
         run: |
-          mkdir build && cd build
+          mkdir -p build && cd build
           cmake .. -DCMAKE_BUILD_TYPE=Release
           make
 
       - name: Archive Release Artifacts
         run: |
-          zip -r ubuntu-22.04-build.zip *
-        working-directory: build/release/src
+          mkdir -p build/release/src
+          mv build/* build/release/src/ || true
+          zip -r ubuntu-22.04-build.zip build/release/src/*
 
       - name: Upload Release Artifacts
         uses: actions/upload-artifact@v2
         with:
           name: ubuntu-22.04-build.zip
-          path: build/release/src/ubuntu-22.04-build.zip
+          path: ubuntu-22.04-build.zip
 
   build-windows:
     runs-on: windows-latest
@@ -93,14 +95,15 @@ jobs:
 
       - name: Archive Release Artifacts
         run: |
-          tar -czvf windows-build.tar.gz *
-        working-directory: build/release/src
+          mkdir -p build/release/src
+          mv build/* build/release/src/ || true
+          tar -czvf windows-build.tar.gz build/release/src/*
 
       - name: Upload Release Artifacts
         uses: actions/upload-artifact@v2
         with:
           name: windows-build.tar.gz
-          path: build/release/src/windows-build.tar.gz
+          path: windows-build.tar.gz
 
   build-macos:
     runs-on: macos-latest
@@ -114,20 +117,21 @@ jobs:
 
       - name: Build
         run: |
-          mkdir build && cd build
+          mkdir -p build && cd build
           cmake .. -DCMAKE_BUILD_TYPE=Release
           make
 
       - name: Archive Release Artifacts
         run: |
-          zip -r macos-build.zip *
-        working-directory: build/release/src
+          mkdir -p build/release/src
+          mv build/* build/release/src/ || true
+          zip -r macos-build.zip build/release/src/*
 
       - name: Upload Release Artifacts
         uses: actions/upload-artifact@v2
         with:
           name: macos-build.zip
-          path: build/release/src/macos-build.zip
+          path: macos-build.zip
 
   create-release:
     runs-on: ubuntu-latest
