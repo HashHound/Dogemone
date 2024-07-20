@@ -19,21 +19,20 @@ jobs:
 
       - name: Build
         run: |
-          mkdir -p build
-          cd build
+          mkdir build && cd build
           cmake .. -DCMAKE_BUILD_TYPE=Release
           make
 
       - name: Archive Release Artifacts
         run: |
           zip -r ubuntu-20.04-build.zip *
-        working-directory: build
+        working-directory: build/release/src
 
       - name: Upload Release Artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: ubuntu-20.04-build
-          path: build/ubuntu-20.04-build.zip
+          name: ubuntu-20.04-build.zip
+          path: build/release/src/ubuntu-20.04-build.zip
 
   build-ubuntu-2204:
     runs-on: ubuntu-22.04
@@ -48,24 +47,24 @@ jobs:
 
       - name: Build
         run: |
-          mkdir -p build
-          cd build
+          mkdir build && cd build
           cmake .. -DCMAKE_BUILD_TYPE=Release
           make
 
       - name: Archive Release Artifacts
         run: |
           zip -r ubuntu-22.04-build.zip *
-        working-directory: build
+        working-directory: build/release/src
 
       - name: Upload Release Artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: ubuntu-22.04-build
-          path: build/ubuntu-22.04-build.zip
+          name: ubuntu-22.04-build.zip
+          path: build/release/src/ubuntu-22.04-build.zip
 
   build-windows:
     runs-on: windows-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -94,13 +93,14 @@ jobs:
 
       - name: Archive Release Artifacts
         run: |
-          Compress-Archive -Path build\* -DestinationPath windows-build.zip
+          tar -czvf windows-build.tar.gz *
+        working-directory: build/release/src
 
       - name: Upload Release Artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: windows-build
-          path: windows-build.zip
+          name: windows-build.tar.gz
+          path: build/release/src/windows-build.tar.gz
 
   build-macos:
     runs-on: macos-latest
@@ -114,21 +114,20 @@ jobs:
 
       - name: Build
         run: |
-          mkdir -p build
-          cd build
+          mkdir build && cd build
           cmake .. -DCMAKE_BUILD_TYPE=Release
           make
 
       - name: Archive Release Artifacts
         run: |
           zip -r macos-build.zip *
-        working-directory: build
+        working-directory: build/release/src
 
       - name: Upload Release Artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: macos-build
-          path: build/macos-build.zip
+          name: macos-build.zip
+          path: build/release/src/macos-build.zip
 
   create-release:
     runs-on: ubuntu-latest
@@ -137,25 +136,25 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Download Ubuntu 20.04 Artifacts
+      - name: Download Artifacts (Ubuntu 20.04)
         uses: actions/download-artifact@v2
         with:
-          name: ubuntu-20.04-build
+          name: ubuntu-20.04-build.zip
 
-      - name: Download Ubuntu 22.04 Artifacts
+      - name: Download Artifacts (Ubuntu 22.04)
         uses: actions/download-artifact@v2
         with:
-          name: ubuntu-22.04-build
+          name: ubuntu-22.04-build.zip
 
-      - name: Download Windows Artifacts
+      - name: Download Artifacts (Windows)
         uses: actions/download-artifact@v2
         with:
-          name: windows-build
+          name: windows-build.tar.gz
 
-      - name: Download macOS Artifacts
+      - name: Download Artifacts (macOS)
         uses: actions/download-artifact@v2
         with:
-          name: macos-build
+          name: macos-build.zip
 
       - name: Create Release
         id: create_release
@@ -168,42 +167,42 @@ jobs:
           draft: false
           prerelease: false
 
-      - name: Upload Ubuntu 20.04 Release Asset
+      - name: Upload Release Asset (Ubuntu 20.04)
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ubuntu-20.04-build/ubuntu-20.04-build.zip
+          asset_path: ./ubuntu-20.04-build.zip
           asset_name: ubuntu-20.04-build.zip
           asset_content_type: application/zip
 
-      - name: Upload Ubuntu 22.04 Release Asset
+      - name: Upload Release Asset (Ubuntu 22.04)
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ubuntu-22.04-build/ubuntu-22.04-build.zip
+          asset_path: ./ubuntu-22.04-build.zip
           asset_name: ubuntu-22.04-build.zip
           asset_content_type: application/zip
 
-      - name: Upload Windows Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: windows-build/windows-build.zip
-          asset_name: windows-build.zip
-          asset_content_type: application/zip
-
-      - name: Upload macOS Release Asset
+      - name: Upload Release Asset (Windows)
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: macos-build/macos-build.zip
+          asset_path: ./windows-build.tar.gz
+          asset_name: windows-build.tar.gz
+          asset_content_type: application/gzip
+
+      - name: Upload Release Asset (macOS)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./macos-build.zip
           asset_name: macos-build.zip
           asset_content_type: application/zip
