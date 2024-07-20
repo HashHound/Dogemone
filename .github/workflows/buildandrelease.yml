@@ -2,7 +2,7 @@ name: Build and Release
 
 on:
   schedule:
-    - cron: '0 0 * * *' # Run every day at midnight
+    - cron: '0 0 * * *' # Daily at midnight
   push:
     tags:
       - 'v*' # Trigger on tag push
@@ -24,52 +24,11 @@ jobs:
           cmake -DCMAKE_BUILD_TYPE=Release ..
           make
       - name: Archive build artifacts
-        uses: actions/upload-artifact@v2
+        run: zip -r ubuntu-20-binaries.zip build/
+      - uses: actions/upload-artifact@v2
         with:
-          name: ubuntu-20-binaries
-          path: build/
-
-  build-ubuntu-22:
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential git cmake libboost-all-dev libssl-dev
-      - name: Build
-        run: |
-          mkdir -p build
-          cd build
-          cmake -DCMAKE_BUILD_TYPE=Release ..
-          make
-      - name: Archive build artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: ubuntu-22-binaries
-          path: build/
-
-  build-hiveos:
-    runs-on: ubuntu-18.04
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential git cmake libboost-all-dev libssl-dev
-      - name: Build
-        run: |
-          mkdir -p build
-          cd build
-          cmake -DCMAKE_BUILD_TYPE=Release ..
-          make
-      - name: Archive build artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: hiveos-binaries
-          path: build/
+          name: ubuntu-20-binaries.zip
+          path: ubuntu-20-binaries.zip
 
   build-windows:
     runs-on: windows-latest
@@ -80,9 +39,7 @@ jobs:
         uses: msys2/setup-msys2@v2
         with:
           update: true
-      - name: Install dependencies
-        run: |
-          pacman -S --noconfirm base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake mingw-w64-x86_64-boost mingw-w64-x86_64-openssl
+          install: base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake mingw-w64-x86_64-boost mingw-w64-x86_64-openssl
       - name: Build
         run: |
           mkdir -p build
@@ -90,35 +47,68 @@ jobs:
           cmake -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release ..
           cmake --build .
       - name: Archive build artifacts
-        uses: actions/upload-artifact@v2
+        run: 7z a windows-binaries.zip build/
+      - uses: actions/upload-artifact@v2
         with:
-          name: windows-binaries
-          path: build/
+          name: windows-binaries.zip
+          path: windows-binaries.zip
 
-  release:
-    needs: [build-ubuntu-20, build-ubuntu-22, build-hiveos, build-windows]
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Install dependencies
+        run: |
+          brew install cmake boost openssl
+      - name: Build
+        run: |
+          mkdir -p build
+          cd build
+          cmake -DCMAKE_BUILD_TYPE=Release ..
+          make
+      - name: Archive build artifacts
+        run: zip -r mac-binaries.zip build/
+      - uses: actions/upload-artifact@v2
+        with:
+          name: mac-binaries.zip
+          path: mac-binaries.zip
+
+  build-android:
     runs-on: ubuntu-latest
     steps:
-      - name: Download ubuntu-20 build artifacts
-        uses: actions/download-artifact@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Set up JDK 11
+        uses: actions/setup-java@v2
         with:
-          name: ubuntu-20-binaries
-          path: ubuntu-20-binaries/
-      - name: Download ubuntu-22 build artifacts
-        uses: actions/download-artifact@v2
+          java-version: '11'
+          distribution: 'adopt'
+      - name: Install Android SDK
+        run: |
+          wget https://dl.google.com/android/repository/commandlinetools-linux-6609375_latest.zip
+          unzip commandlinetools-linux-6609375_latest.zip -d cmdline-tools
+          echo ${{ github.workspace }}/cmdline-tools/bin >> $GITHUB_PATH
+          yes | cmdline-tools/bin/sdkmanager --sdk_root=${{ github.workspace }}/android-sdk "platform-tools" "platforms;android-29" "build-tools;29.0.3"
+      - name: Build
+        run: |
+          mkdir -p build
+          cd build
+          cmake -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK/build/cmake/android.toolchain.cmake -DANDROID_ABI=armeabi-v7a -DANDROID_PLATFORM=android-29 ..
+          make
+      - name: Archive build artifacts
+        run: zip -r android-binaries.zip build/
+      - uses: actions/upload-artifact@v2
         with:
-          name: ubuntu-22-binaries
-          path: ubuntu-22-binaries/
-      - name: Download hiveos build artifacts
+          name: android-binaries.zip
+          path: android-binaries.zip
+
+  release:
+    needs: [build-ubuntu-20, build-windows, build-mac, build-android]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
         uses: actions/download-artifact@v2
-        with:
-          name: hiveos-binaries
-          path: hiveos-binaries/
-      - name: Download windows build artifacts
-        uses: actions/download-artifact@v2
-        with:
-          name: windows-binaries
-          path: windows-binaries/
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
@@ -128,7 +118,4 @@ jobs:
           draft: false
           prerelease: true
           files: |
-            ubuntu-20-binaries/**
-            ubuntu-22-binaries/**
-            hiveos-binaries/**
-            windows-binaries/**
+            *.zip
