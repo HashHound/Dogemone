@@ -1,121 +1,106 @@
 name: Build and Release
 
 on:
-  schedule:
-    - cron: '0 0 * * *' # Daily at midnight
   push:
     tags:
-      - 'v*' # Trigger on tag push
+      - 'v*'
 
 jobs:
-  build-ubuntu-20:
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential git cmake libboost-all-dev libssl-dev
-      - name: Build
-        run: |
-          mkdir -p build
-          cd build
-          cmake -DCMAKE_BUILD_TYPE=Release ..
-          make
-      - name: Archive build artifacts
-        run: zip -r ubuntu-20-binaries.zip build/
-      - uses: actions/upload-artifact@v2
-        with:
-          name: ubuntu-20-binaries.zip
-          path: ubuntu-20-binaries.zip
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-20.04
+            artifact-name: 'ubuntu-20.04'
+          - os: ubuntu-22.04
+            artifact-name: 'ubuntu-22.04'
+          - os: macos-latest
+            artifact-name: 'macos'
+          - os: windows-latest
+            artifact-name: 'windows'
 
-  build-windows:
-    runs-on: windows-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Install MSYS2
-        uses: msys2/setup-msys2@v2
-        with:
-          update: true
-          install: base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake mingw-w64-x86_64-boost mingw-w64-x86_64-openssl
-      - name: Build
-        run: |
-          mkdir -p build
-          cd build
-          cmake -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release ..
-          cmake --build .
-      - name: Archive build artifacts
-        run: 7z a windows-binaries.zip build/
-      - uses: actions/upload-artifact@v2
-        with:
-          name: windows-binaries.zip
-          path: windows-binaries.zip
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-  build-mac:
-    runs-on: macos-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Install dependencies
-        run: |
-          brew install cmake boost openssl
-      - name: Build
-        run: |
-          mkdir -p build
-          cd build
-          cmake -DCMAKE_BUILD_TYPE=Release ..
-          make
-      - name: Archive build artifacts
-        run: zip -r mac-binaries.zip build/
-      - uses: actions/upload-artifact@v2
-        with:
-          name: mac-binaries.zip
-          path: mac-binaries.zip
+    - name: Set up Python (Linux/MacOS)
+      if: matrix.os != 'windows-latest'
+      uses: actions/setup-python@v2
 
-  build-android:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Set up JDK 11
-        uses: actions/setup-java@v2
-        with:
-          java-version: '11'
-          distribution: 'adopt'
-      - name: Install Android SDK
-        run: |
-          wget https://dl.google.com/android/repository/commandlinetools-linux-6609375_latest.zip
-          unzip commandlinetools-linux-6609375_latest.zip -d cmdline-tools
-          echo ${{ github.workspace }}/cmdline-tools/bin >> $GITHUB_PATH
-          yes | cmdline-tools/bin/sdkmanager --sdk_root=${{ github.workspace }}/android-sdk "platform-tools" "platforms;android-29" "build-tools;29.0.3"
-      - name: Build
-        run: |
-          mkdir -p build
-          cd build
-          cmake -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK/build/cmake/android.toolchain.cmake -DANDROID_ABI=armeabi-v7a -DANDROID_PLATFORM=android-29 ..
-          make
-      - name: Archive build artifacts
-        run: zip -r android-binaries.zip build/
-      - uses: actions/upload-artifact@v2
-        with:
-          name: android-binaries.zip
-          path: android-binaries.zip
+    - name: Set up Python (Windows)
+      if: matrix.os == 'windows-latest'
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies (Ubuntu/MacOS)
+      if: matrix.os != 'windows-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake libboost-all-dev libssl-dev
+
+    - name: Install dependencies (Windows)
+      if: matrix.os == 'windows-latest'
+      uses: msys2/setup-msys2@v2
+      with:
+        update: true
+        install: >-
+          base-devel
+          mingw-w64-x86_64-toolchain
+          mingw-w64-x86_64-cmake
+          mingw-w64-x86_64-boost
+          mingw-w64-x86_64-openssl
+
+    - name: Build (Linux/MacOS)
+      if: matrix.os != 'windows-latest'
+      run: |
+        mkdir build && cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release
+        make
+
+    - name: Build (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        mkdir build && cd build
+        cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+        cmake --build .
+
+    - name: Archive Release Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: ${{ matrix.artifact-name }}.zip
+        path: build/*.zip
 
   release:
-    needs: [build-ubuntu-20, build-windows, build-mac, build-android]
+    name: Create Release
+    needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Download all artifacts
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Download Artifacts
         uses: actions/download-artifact@v2
+
       - name: Create Release
-        uses: ncipollo/release-action@v1
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ github.ref }}
-          name: Release ${{ github.ref }}
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
           draft: false
-          prerelease: true
-          files: |
-            *.zip
+          prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./${{ matrix.artifact-name }}.zip
+          asset_name: ${{ matrix.artifact-name }}.zip
+          asset_content_type: application/zip
