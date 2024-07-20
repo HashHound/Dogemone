@@ -1,4 +1,4 @@
-
+[![Build](https://github.com/HashHound/Dogemone/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/HashHound/Dogemone/actions/workflows/cmake-multi-platform.yml)
 
 
 
