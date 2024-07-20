@@ -32,7 +32,7 @@ jobs:
       - name: Upload Release Artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: ubuntu-20.04-build.zip
+          name: ubuntu-20.04-build
           path: build/ubuntu-20.04-build.zip
 
   build-ubuntu-2204:
@@ -61,7 +61,7 @@ jobs:
       - name: Upload Release Artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: ubuntu-22.04-build.zip
+          name: ubuntu-22.04-build
           path: build/ubuntu-22.04-build.zip
 
   build-windows:
@@ -99,7 +99,7 @@ jobs:
       - name: Upload Release Artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: windows-build.zip
+          name: windows-build
           path: windows-build.zip
 
   build-macos:
@@ -127,7 +127,7 @@ jobs:
       - name: Upload Release Artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: macos-build.zip
+          name: macos-build
           path: build/macos-build.zip
 
   create-release:
@@ -140,22 +140,22 @@ jobs:
       - name: Download Ubuntu 20.04 Artifacts
         uses: actions/download-artifact@v2
         with:
-          name: ubuntu-20.04-build.zip
+          name: ubuntu-20.04-build
 
       - name: Download Ubuntu 22.04 Artifacts
         uses: actions/download-artifact@v2
         with:
-          name: ubuntu-22.04-build.zip
+          name: ubuntu-22.04-build
 
       - name: Download Windows Artifacts
         uses: actions/download-artifact@v2
         with:
-          name: windows-build.zip
+          name: windows-build
 
       - name: Download macOS Artifacts
         uses: actions/download-artifact@v2
         with:
-          name: macos-build.zip
+          name: macos-build
 
       - name: Create Release
         id: create_release
@@ -174,7 +174,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ubuntu-20.04-build.zip
+          asset_path: ubuntu-20.04-build/ubuntu-20.04-build.zip
           asset_name: ubuntu-20.04-build.zip
           asset_content_type: application/zip
 
@@ -184,7 +184,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ubuntu-22.04-build.zip
+          asset_path: ubuntu-22.04-build/ubuntu-22.04-build.zip
           asset_name: ubuntu-22.04-build.zip
           asset_content_type: application/zip
 
@@ -194,7 +194,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: windows-build.zip
+          asset_path: windows-build/windows-build.zip
           asset_name: windows-build.zip
           asset_content_type: application/zip
 
@@ -204,6 +204,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: macos-build.zip
+          asset_path: macos-build/macos-build.zip
           asset_name: macos-build.zip
           asset_content_type: application/zip
