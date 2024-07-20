@@ -94,14 +94,13 @@ jobs:
 
       - name: Archive Release Artifacts
         run: |
-          zip -r windows-build.zip *
-        working-directory: build
+          Compress-Archive -Path build\* -DestinationPath windows-build.zip
 
       - name: Upload Release Artifacts
         uses: actions/upload-artifact@v2
         with:
           name: windows-build.zip
-          path: build/windows-build.zip
+          path: windows-build.zip
 
   build-macos:
     runs-on: macos-latest
