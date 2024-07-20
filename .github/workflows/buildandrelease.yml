@@ -15,7 +15,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cmake libboost-all-dev libssl-dev
+          sudo apt-get install -y build-essential cmake libboost-all-dev libssl-dev zip
 
       - name: Build
         run: |
@@ -24,10 +24,15 @@ jobs:
           make
 
       - name: Archive Release Artifacts
+        run: |
+          zip -r ubuntu-20.04-build.zip *
+        working-directory: build/release/src
+
+      - name: Upload Release Artifacts
         uses: actions/upload-artifact@v2
         with:
           name: ubuntu-20.04-build.zip
-          path: build/*.zip
+          path: build/release/src/ubuntu-20.04-build.zip
 
   build-ubuntu-2204:
     runs-on: ubuntu-22.04
@@ -38,7 +43,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cmake libboost-all-dev libssl-dev
+          sudo apt-get install -y build-essential cmake libboost-all-dev libssl-dev zip
 
       - name: Build
         run: |
@@ -47,10 +52,15 @@ jobs:
           make
 
       - name: Archive Release Artifacts
+        run: |
+          zip -r ubuntu-22.04-build.zip *
+        working-directory: build/release/src
+
+      - name: Upload Release Artifacts
         uses: actions/upload-artifact@v2
         with:
           name: ubuntu-22.04-build.zip
-          path: build/*.zip
+          path: build/release/src/ubuntu-22.04-build.zip
 
   build-windows:
     runs-on: windows-latest
@@ -81,11 +91,16 @@ jobs:
         cmake -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release ..
         cmake --build .
 
-    - name: Archive Release Artifacts
-      uses: actions/upload-artifact@v2
-      with:
-       name: windows-build.zip
-       path: build/*.zip
+      - name: Archive Release Artifacts
+        run: |
+          zip -r windows-build.zip *
+        working-directory: build/release/src
+
+      - name: Upload Release Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: windows-build.zip
+          path: build/release/src/windows-build.zip
 
   build-macos:
     runs-on: macos-latest
@@ -104,10 +119,15 @@ jobs:
           make
 
       - name: Archive Release Artifacts
+        run: |
+          zip -r macos-build.zip *
+        working-directory: build/release/src
+
+      - name: Upload Release Artifacts
         uses: actions/upload-artifact@v2
         with:
           name: macos-build.zip
-          path: build/*.zip
+          path: build/release/src/macos-build.zip
 
   create-release:
     runs-on: ubuntu-latest
@@ -118,6 +138,18 @@ jobs:
 
       - name: Download Artifacts
         uses: actions/download-artifact@v2
+        with:
+          name: ubuntu-20.04-build.zip
+          path: build/release/src/ubuntu-20.04-build.zip
+        with:
+          name: ubuntu-22.04-build.zip
+          path: build/release/src/ubuntu-22.04-build.zip
+        with:
+          name: windows-build.zip
+          path: build/release/src/windows-build.zip
+        with:
+          name: macos-build.zip
+          path: build/release/src/macos-build.zip
 
       - name: Create Release
         id: create_release
