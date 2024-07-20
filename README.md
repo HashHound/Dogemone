@@ -1,5 +1,5 @@
 [![Build](https://github.com/HashHound/Dogemone/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/HashHound/Dogemone/actions/workflows/cmake-multi-platform.yml)
-
+[![Build and Release](https://github.com/HashHound/Dogemone/actions/workflows/buildandrelease.yml/badge.svg)](https://github.com/HashHound/Dogemone/actions/workflows/buildandrelease.yml)
 
 
 ## Building Dogemone 
