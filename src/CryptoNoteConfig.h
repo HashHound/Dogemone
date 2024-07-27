@@ -48,7 +48,7 @@ const size_t BLOCKCHAIN_TIMESTAMP_CHECK_WINDOW = 60;
 const size_t BLOCKCHAIN_TIMESTAMP_CHECK_WINDOW_V1 = 11;
 
 // MONEY_SUPPLY - total number coins to be generated
-const uint64_t MONEY_SUPPLY = UINT64_C(300000000000000000); // 300 million coins in atomic units
+const uint64_t MONEY_SUPPLY = UINT64_C(300000000000000000000); // 300 million coins in atomic units
 const uint64_t COIN = UINT64_C(1000000000000); // 1 coin = 10^12 atomic units
 const uint64_t FIXED_BLOCK_REWARD = 57 * COIN + (6 * COIN / 10); // 57.06 coins in atomic units
 const uint64_t TAIL_EMISSION_REWARD = 0.3 * COIN; // 0.3 coins in atomic units
