@@ -64,47 +64,6 @@ jobs:
           name: ubuntu-22.04-build.zip
           path: ubuntu-22.04-build.zip
 
-  build-windows:
-    runs-on: windows-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Install MSYS2
-        uses: msys2/setup-msys2@v2
-        with:
-          update: true
-
-      - name: Install dependencies
-        shell: msys2 {0}
-        run: |
-          pacman -Sy --noconfirm
-          pacman -S --noconfirm base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake mingw-w64-x86_64-boost mingw-w64-x86_64-openssl
-
-      - name: Add MSYS2 to PATH
-        run: echo "C:\\msys64\\mingw64\\bin" >> $GITHUB_PATH
-
-      - name: Build
-        shell: msys2 {0}
-        run: |
-          mkdir -p build
-          cd build
-          cmake -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release ..
-          cmake --build .
-
-      - name: Archive Release Artifacts
-        run: |
-          mkdir -p build/release/src
-          mv build/* build/release/src/ || true
-          tar -czvf windows-build.tar.gz build/release/src/*
-
-      - name: Upload Release Artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: windows-build.tar.gz
-          path: windows-build.tar.gz
-
   build-macos:
     runs-on: macos-latest
     steps:
@@ -135,7 +94,7 @@ jobs:
 
   create-release:
     runs-on: ubuntu-latest
-    needs: [build-ubuntu-2004, build-ubuntu-2204, build-windows, build-macos]
+    needs: [build-ubuntu-2004, build-ubuntu-2204, build-macos]
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -149,11 +108,6 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: ubuntu-22.04-build.zip
-
-      - name: Download Artifacts (Windows)
-        uses: actions/download-artifact@v2
-        with:
-          name: windows-build.tar.gz
 
       - name: Download Artifacts (macOS)
         uses: actions/download-artifact@v2
@@ -190,16 +144,6 @@ jobs:
           asset_path: ./ubuntu-22.04-build.zip
           asset_name: ubuntu-22.04-build.zip
           asset_content_type: application/zip
-
-      - name: Upload Release Asset (Windows)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT_GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./windows-build.tar.gz
-          asset_name: windows-build.tar.gz
-          asset_content_type: application/gzip
 
       - name: Upload Release Asset (macOS)
         uses: actions/upload-release-asset@v1
