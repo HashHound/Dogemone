@@ -25,15 +25,14 @@ jobs:
 
       - name: Archive Release Artifacts
         run: |
-          mkdir -p release
-          mv build/* release/ || true
-          zip -r ubuntu-20.04-build.zip release/*
+          cd build/src
+          zip -r ubuntu-20.04-build.zip ./*
 
       - name: Upload Release Artifacts
         uses: actions/upload-artifact@v2
         with:
           name: ubuntu-20.04-build
-          path: ubuntu-20.04-build.zip
+          path: build/src/ubuntu-20.04-build.zip
 
   build-ubuntu-2204:
     runs-on: ubuntu-22.04
@@ -54,15 +53,14 @@ jobs:
 
       - name: Archive Release Artifacts
         run: |
-          mkdir -p release
-          mv build/* release/ || true
-          zip -r ubuntu-22.04-build.zip release/*
+          cd build/src
+          zip -r ubuntu-22.04-build.zip ./*
 
       - name: Upload Release Artifacts
         uses: actions/upload-artifact@v2
         with:
           name: ubuntu-22.04-build
-          path: ubuntu-22.04-build.zip
+          path: build/src/ubuntu-22.04-build.zip
 
   build-macos:
     runs-on: macos-latest
@@ -82,15 +80,14 @@ jobs:
 
       - name: Archive Release Artifacts
         run: |
-          mkdir -p release
-          mv build/* release/ || true
-          zip -r macos-build.zip release/*
+          cd build/src
+          zip -r macos-build.zip ./*
 
       - name: Upload Release Artifacts
         uses: actions/upload-artifact@v2
         with:
           name: macos-build
-          path: macos-build.zip
+          path: build/src/macos-build.zip
 
   build-windows:
     runs-on: windows-latest
@@ -121,14 +118,14 @@ jobs:
 
       - name: Archive Release Artifacts
         run: |
-          mkdir release
-          tar -a -c -f windows-build.zip release/*
+          cd build/src
+          "C:\Program Files\Git\usr\bin\zip.exe" -r windows-build.zip ./*
 
       - name: Upload Release Artifacts
         uses: actions/upload-artifact@v2
         with:
           name: windows-build
-          path: windows-build.zip
+          path: build/src/windows-build.zip
 
   create-release:
     runs-on: ubuntu-latest
