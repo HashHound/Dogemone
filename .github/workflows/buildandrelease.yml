@@ -117,9 +117,10 @@ jobs:
           mingw32-make
 
       - name: Archive Release Artifacts
+        shell: bash
         run: |
           cd build/src
-          "C:\Program Files\Git\usr\bin\zip.exe" -r windows-build.zip ./*
+          /usr/bin/zip -r windows-build.zip ./*
 
       - name: Upload Release Artifacts
         uses: actions/upload-artifact@v2
