@@ -1,9 +1,8 @@
-name: Build and Release on Tag
+name: Build and Release Nightly
 
 on:
-  push:
-    tags:
-      - '*'
+  schedule:
+    - cron: '0 0 * * *'  # This runs the workflow every day at midnight UTC
 
 jobs:
   build-ubuntu-2004:
@@ -25,14 +24,14 @@ jobs:
 
       - name: Archive Release Artifacts
         run: |
-          mkdir -p build/release/src
-          mv build/* build/release/src/ || true
-          zip -r ubuntu-20.04-build.zip build/release/src/*
+          mkdir -p release
+          mv build/* release/ || true
+          zip -r ubuntu-20.04-build.zip release/*
 
       - name: Upload Release Artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: ubuntu-20.04-build.zip
+          name: ubuntu-20.04-build
           path: ubuntu-20.04-build.zip
 
   build-ubuntu-2204:
@@ -54,14 +53,14 @@ jobs:
 
       - name: Archive Release Artifacts
         run: |
-          mkdir -p build/release/src
-          mv build/* build/release/src/ || true
-          zip -r ubuntu-22.04-build.zip build/release/src/*
+          mkdir -p release
+          mv build/* release/ || true
+          zip -r ubuntu-22.04-build.zip release/*
 
       - name: Upload Release Artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: ubuntu-22.04-build.zip
+          name: ubuntu-22.04-build
           path: ubuntu-22.04-build.zip
 
   build-macos:
@@ -82,14 +81,14 @@ jobs:
 
       - name: Archive Release Artifacts
         run: |
-          mkdir -p build/release/src
-          mv build/* build/release/src/ || true
-          zip -r macos-build.zip build/release/src/*
+          mkdir -p release
+          mv build/* release/ || true
+          zip -r macos-build.zip release/*
 
       - name: Upload Release Artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: macos-build.zip
+          name: macos-build
           path: macos-build.zip
 
   create-release:
@@ -102,28 +101,28 @@ jobs:
       - name: Download Artifacts (Ubuntu 20.04)
         uses: actions/download-artifact@v2
         with:
-          name: ubuntu-20.04-build.zip
+          name: ubuntu-20.04-build
 
       - name: Download Artifacts (Ubuntu 22.04)
         uses: actions/download-artifact@v2
         with:
-          name: ubuntu-22.04-build.zip
+          name: ubuntu-22.04-build
 
       - name: Download Artifacts (macOS)
         uses: actions/download-artifact@v2
         with:
-          name: macos-build.zip
+          name: macos-build
 
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT_GITHUB_TOKEN }}
         with:
-          tag_name: v1.0.${{ github.run_number }}
-          release_name: Release v1.0.${{ github.run_number }}
+          tag_name: nightly-${{ github.run_id }}
+          release_name: Nightly Build ${{ github.run_id }}
           draft: false
-          prerelease: false
+          prerelease: true
 
       - name: Upload Release Asset (Ubuntu 20.04)
         uses: actions/upload-release-asset@v1
@@ -131,7 +130,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.PAT_GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./ubuntu-20.04-build.zip
+          asset_path: ubuntu-20.04-build.zip
           asset_name: ubuntu-20.04-build.zip
           asset_content_type: application/zip
 
@@ -141,7 +140,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.PAT_GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./ubuntu-22.04-build.zip
+          asset_path: ubuntu-22.04-build.zip
           asset_name: ubuntu-22.04-build.zip
           asset_content_type: application/zip
 
@@ -151,6 +150,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.PAT_GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./macos-build.zip
+          asset_path: macos-build.zip
           asset_name: macos-build.zip
           asset_content_type: application/zip
