@@ -3,6 +3,7 @@ name: Build and Release Nightly
 on:
   schedule:
     - cron: '0 0 * * *'  # This runs the workflow every day at midnight UTC
+  workflow_dispatch:  # Allows manual triggering
 
 jobs:
   build-ubuntu-2004:
