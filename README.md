@@ -4,11 +4,11 @@
 
 ## **Dogemone: The Future of Privacy Coins**
 
-Dogemone is a cutting-edge privacy coin built on the robust Cryptonote protocol, ensuring unparalleled transaction confidentiality and security. With a maximum supply of 300 million, Dogemone follows a meticulously designed emission curve, providing a predictable and fair distribution over time. The coin leverages the Cryptonight algorithm, known for its Eagleatarian mining capability, promoting decentralization. Dogemone is committed to protecting your financial privacy while maintaining a secure and decentralized network, making it a standout choice in the realm of cryptocurrency. Join us in shaping a future where privacy and security are paramount.
+Dogemone is a cutting-edge privacy coin built on the robust Cryptonote protocol, ensuring unparalleled transaction confidentiality and security. With a maximum supply of ~300 million, Dogemone follows a meticulously designed emission curve, providing a predictable and fair distribution over time. The coin leverages the Cryptonight algorithm, known for its Eagleatarian mining capability, promoting decentralization. Dogemone is committed to protecting your financial privacy while maintaining a secure and decentralized network, making it a standout choice in the realm of cryptocurrency. Join us in shaping a future where privacy and security are paramount.
 
 ### **Key Features:**
 - **Privacy-Focused**: Utilizes Cryptonote protocol for untraceable and unlinkable transactions.
-- **Controlled Supply**: Capped at 300 million coins with a fair emission curve.
+- **Controlled Supply**: Initial Supply is Capped at ~300 million coins with a fair fixed block reward of 57 coins. There is also a tail emission after the initial supply which is 0.3 coins per Block.
 - **Efficient Mining**: Cryptonight algorithm ensures equitable mining opportunities.
 - **No Premine**: 100% fair launch with no premine.
 - **Developer Fee**: 10% of the block reward is allocated to development, taken slowly over time.
