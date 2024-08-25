@@ -105,10 +105,6 @@ jobs:
             mingw-w64-x86_64-boost
             mingw-w64-x86_64-openssl
 
-      - name: Install zip utility
-        run: |
-          choco install zip -y
-
       - name: Build
         shell: msys2 {0}
         run: |
@@ -117,16 +113,14 @@ jobs:
           mingw32-make
 
       - name: Archive Release Artifacts
-        shell: bash
         run: |
-          cd build/src
-          /usr/bin/zip -r windows-build.zip ./*
+          7z a windows-build.zip build\src\*
 
       - name: Upload Release Artifacts
         uses: actions/upload-artifact@v2
         with:
           name: windows-build
-          path: build/src/windows-build.zip
+          path: windows-build.zip
 
   create-release:
     runs-on: ubuntu-latest
