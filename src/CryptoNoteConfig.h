@@ -215,8 +215,8 @@ const uint32_t P2P_IDLE_CONNECTION_KILL_INTERVAL = (5 * 60); // 5 minutes
 const char P2P_STAT_TRUSTED_PUB_KEY[] = "8f80f9a5a434a9f1510d13336228debfee9c918ce505efe225d8c94d045fa115";
 
 const char* const SEED_NODES[] = {
-  //"seed1.karbowanec.com:32347",
-  //"seed2.karbowanec.com:32347",
+  "95.179.157.32:49200",
+  "65.20.104.165:49200",
 };
 
 } // CryptoNote

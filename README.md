@@ -2,7 +2,7 @@
 [![Build and Release](https://github.com/HashHound/Dogemone/actions/workflows/buildandrelease.yml/badge.svg)](https://github.com/HashHound/Dogemone/actions/workflows/buildandrelease.yml)
 
 
-## Building Dogemone 
+## Building Dogemone
 
 ### On *nix
 
@@ -45,23 +45,48 @@ The resulting executables can be found in `build/release/src`.
 
 ### On Windows
 
-Dependencies: MSVC 2013 or later, CMake 2.8.6 or later, Boost 1.55 or later, OpenSSL. You may download them from:
+# Building Dogemone with MinGW64 on Windows
 
-* https://www.microsoft.com/
-* https://www.cmake.org/
-* https://www.boost.org/
-* https://slproweb.com/products/Win32OpenSSL.html
+## Prerequisites
 
-To build, change to a directory where this file is located, and run these commands: 
-```
-mkdir build
-cd build
-cmake -G "Visual Studio 15 Win64" ..
-```
+1. **MinGW-w64**: Download and install MinGW-w64 from the official source or use a package manager like MSYS2.
+   - [MinGW-w64](https://www.mingw-w64.org/)
+   - [MSYS2](https://www.msys2.org/)
 
-And then do Build.
-Good luck!
+2. **CMake**: Install CMake, which is required for configuring the build.
+   - [CMake Download](https://cmake.org/download/)
 
+3. **Git**: Install Git to clone the repository.
+   - [Git Download](https://git-scm.com/downloads)
+
+4. **Dependencies**: Ensure all necessary dependencies are installed and available for MinGW-w64. Dependencies typically include:
+   - Boost
+   - OpenSSL
+   - Zlib
+
+## Instructions
+
+### 1. Install MSYS2
+
+- Download MSYS2 from [MSYS2's official website](https://www.msys2.org/).
+- Follow the installation instructions to install MSYS2 on your Windows machine.
+- Once installed, open the MSYS2 MSYS terminal from the Start menu.
+
+### 2. Install MinGW-w64 Toolchain
+
+- Update the package database and install MinGW-w64 toolchain by running the following commands in the MSYS2 terminal:
+
+  ```
+  pacman -Syu
+  pacman -S mingw-w64-x86_64-toolchain
+  pacman -S mingw-w64-x86_64-cmake mingw-w64-x86_64-git mingw-w64-x86_64-boost mingw-w64-x86_64-openssl mingw-w64-x86_64-zlib
+  git clone https://github.com/HashHound/Dogemone.git
+  cd Dogemone
+  mkdir build
+  cd build
+  cmake -G "MinGW Makefiles" ..
+  mingw32-make
+  ```
 
 ### Building for macOS
 
@@ -73,8 +98,8 @@ For the other we recommand you to use [Homebrew](https://brew.sh)
 Continue with:
 ```
 brew install git cmake boost
-git clone https://github.com/seredat/karbowanec.git
-cd karbowanec
+git clone https://github.com/HashHound/Dogemone.git
+cd Dogemone
 cd build
 cmake ..
 make
@@ -104,7 +129,7 @@ export PATH=/opt/android/tool32/arm-linux-androideabi/bin:/opt/android/tool32/bi
 ./b2 abi=aapcs architecture=arm binary-format=elf address-model=32 link=static runtime-link=static --with-chrono --with-date_time --with-filesystem --with-program_options --with-regex --with-serialization --with-system --with-thread --with-context --with-coroutine --with-atomic --build-dir=android32 --stagedir=android32 toolset=clang threading=multi threadapi=pthread target-os=android --reconfigure stage
 ```
 
-Build Karbo for 32 bit Android
+Build Dogemone for 32 bit Android
 ```
 mkdir -p build/release.android32
 cd build/release.android32
@@ -115,6 +140,3 @@ make SimpleWallet
 ### Portable and optimized binaries
 
 By default it will compile portable binary, to build optimized for your CPU, run Cmake with flag `-DARCH=native`.
-
-
-
