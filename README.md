@@ -2,6 +2,21 @@
 [![Build and Release](https://github.com/HashHound/Dogemone/actions/workflows/buildandrelease.yml/badge.svg)](https://github.com/HashHound/Dogemone/actions/workflows/buildandrelease.yml)
 
 
+## **Dogemone: The Future of Privacy Coins**
+
+Dogemone is a cutting-edge privacy coin built on the robust Cryptonote protocol, ensuring unparalleled transaction confidentiality and security. With a maximum supply of 300 million, Dogemone follows a meticulously designed emission curve, providing a predictable and fair distribution over time. The coin leverages the Cryptonight algorithm, known for its Eagleatarian mining capability, promoting decentralization. Dogemone is committed to protecting your financial privacy while maintaining a secure and decentralized network, making it a standout choice in the realm of cryptocurrency. Join us in shaping a future where privacy and security are paramount.
+
+### **Key Features:**
+- **Privacy-Focused**: Utilizes Cryptonote protocol for untraceable and unlinkable transactions.
+- **Controlled Supply**: Capped at 300 million coins with a fair emission curve.
+- **Efficient Mining**: Cryptonight algorithm ensures equitable mining opportunities.
+- **No Premine**: 100% fair launch with no premine.
+- **Developer Fee**: 10% of the block reward is allocated to development, taken slowly over time.
+- **Difficulty Adjustment**: Adaptive difficulty adjustment every 60 seconds for network stability.
+- **Decentralized Network**: Promotes decentralization and security.
+
+Embrace the future of privacy with Dogemone.
+
 ## Building Dogemone
 
 ### On *nix
