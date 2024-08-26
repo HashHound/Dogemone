@@ -122,9 +122,9 @@ const uint32_t UPGRADE_HEIGHT_V2 = 10; // Block v2, pre-LWMA
 const uint32_t UPGRADE_HEIGHT_V3 = 20; // Block v3, LWMA1
 const uint32_t UPGRADE_HEIGHT_V3_1 = 30; // Min fee v2, cap max mixin
 const uint32_t UPGRADE_HEIGHT_V4 = 40; // Block v4, LWMA2, adaptive min fee, min mixin, disable slave merge mining
-const uint32_t UPGRADE_HEIGHT_V4_1 = 50; // LWMA3
-const uint32_t UPGRADE_HEIGHT_V4_2 = 60; // Fee per-byte for extra, ban unmixable denominations
-const uint32_t UPGRADE_HEIGHT_V4_3 = 70; // Fixed min fee + fee per-byte for extra
+const uint32_t UPGRADE_HEIGHT_V4_1 = 4294967294; // LWMA3
+const uint32_t UPGRADE_HEIGHT_V4_2 = 4294967294; // Fee per-byte for extra, ban unmixable denominations
+const uint32_t UPGRADE_HEIGHT_V4_3 = 4294967294; // Fixed min fee + fee per-byte for extra
 const uint32_t UPGRADE_HEIGHT_V5 = 4294967294; // Block v5, back to LWMA1+, Alt. Signed Proof-of-Work
 const uint32_t UPGRADE_HEIGHT_V6 = 4294967294; // Block v6
 
