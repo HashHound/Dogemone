@@ -159,6 +159,9 @@ By default it will compile portable binary, to build optimized for your CPU, run
 ### Socials and Website
 
 Website: https://dogemone.online/
+
 Block Explorer: https://explorer.dogemone.online/
+
 Twitter: https://x.com/ProjectDogemone
+
 Discord: https://discord.com/invite/FMdRT4rjhF
