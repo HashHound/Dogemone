@@ -155,3 +155,10 @@ make SimpleWallet
 ### Portable and optimized binaries
 
 By default it will compile portable binary, to build optimized for your CPU, run Cmake with flag `-DARCH=native`.
+
+### Socials and Website
+
+Website: [url=https://dogemone.online/]Dogemone Official Website[/url]
+Block Explorer: [url=https://explorer.dogemone.online/]Dogemone Explorer[/url]
+Twitter: [url=https://x.com/ProjectDogemone]https://x.com/ProjectDogemone[/url]
+Discord: [url=https://discord.com/invite/FMdRT4rjhF]https://discord.com/invite/FMdRT4rjhF[/url]
