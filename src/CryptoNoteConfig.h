@@ -118,10 +118,10 @@ const size_t FUSION_TX_MAX_SIZE = CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V1 *
 const size_t FUSION_TX_MIN_INPUT_COUNT = 12;
 const size_t FUSION_TX_MIN_IN_OUT_COUNT_RATIO = 4;
 
-const uint32_t UPGRADE_HEIGHT_V2 = 10; // Block v2, pre-LWMA
-const uint32_t UPGRADE_HEIGHT_V3 = 20; // Block v3, LWMA1
-const uint32_t UPGRADE_HEIGHT_V3_1 = 30; // Min fee v2, cap max mixin
-const uint32_t UPGRADE_HEIGHT_V4 = 40; // Block v4, LWMA2, adaptive min fee, min mixin, disable slave merge mining
+const uint32_t UPGRADE_HEIGHT_V2 = 4294967294; // Block v2, pre-LWMA
+const uint32_t UPGRADE_HEIGHT_V3 = 4294967294; // Block v3, LWMA1
+const uint32_t UPGRADE_HEIGHT_V3_1 = 4294967294; // Min fee v2, cap max mixin
+const uint32_t UPGRADE_HEIGHT_V4 = 4294967294; // Block v4, LWMA2, adaptive min fee, min mixin, disable slave merge mining
 const uint32_t UPGRADE_HEIGHT_V4_1 = 4294967294; // LWMA3
 const uint32_t UPGRADE_HEIGHT_V4_2 = 4294967294; // Fee per-byte for extra, ban unmixable denominations
 const uint32_t UPGRADE_HEIGHT_V4_3 = 4294967294; // Fixed min fee + fee per-byte for extra
@@ -148,8 +148,8 @@ const char CRYPTONOTE_TICKER[] = "DME";
 // const char GENESIS_COINBASE_TX_HEX[] = "your_genesis_coinbase_tx_hex_here"; // Replace with actual hex
 
 const static boost::uuids::uuid CRYPTONOTE_NETWORK = { {
-    0x13, 0x2e, 0x55, 0x37, 0xe4, 0x7b, 0x22, 0xd2,
-    0xb4, 0xa6, 0x22, 0x46, 0x24, 0x27, 0x50, 0x00
+    0x23, 0x2e, 0x55, 0x37, 0xe4, 0x7b, 0x22, 0xd2,
+    0xb4, 0xa6, 0x22, 0x56, 0x24, 0x27, 0x50, 0x10
 } };
 
 const uint8_t CURRENT_TRANSACTION_VERSION = 1;
@@ -212,7 +212,7 @@ const uint32_t P2P_IP_BLOCKTIME = (60 * 60 * 24); // 24 hours
 const uint32_t P2P_IP_FAILS_BEFORE_BLOCK = 10;
 const uint32_t P2P_IDLE_CONNECTION_KILL_INTERVAL = (5 * 60); // 5 minutes
 
-const char P2P_STAT_TRUSTED_PUB_KEY[] = "B35F4E8D8B5F79CBD957661A24F6AEA8B37C013C67B78797E19F6E1A80689B15";
+const char P2P_STAT_TRUSTED_PUB_KEY[] = "5BAB11CFB0E68D05FD4277CDB7EA44C5EB3DEB97EC4AECCBC0666C6313C2F4BF";
 
 const char* const SEED_NODES[] = {
   "95.179.157.32:49200",
