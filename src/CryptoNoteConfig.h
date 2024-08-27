@@ -148,8 +148,8 @@ const char CRYPTONOTE_TICKER[] = "DME";
 // const char GENESIS_COINBASE_TX_HEX[] = "your_genesis_coinbase_tx_hex_here"; // Replace with actual hex
 
 const static boost::uuids::uuid CRYPTONOTE_NETWORK = { {
-    0x13, 0x3e, 0x45, 0x67, 0xe8, 0x9b, 0x12, 0xd3,
-    0xa4, 0x56, 0x42, 0x66, 0x14, 0x17, 0x40, 0x00
+    0x13, 0x2e, 0x55, 0x37, 0xe4, 0x7b, 0x22, 0xd2,
+    0xb4, 0xa6, 0x22, 0x46, 0x24, 0x27, 0x50, 0x00
 } };
 
 const uint8_t CURRENT_TRANSACTION_VERSION = 1;
@@ -212,7 +212,7 @@ const uint32_t P2P_IP_BLOCKTIME = (60 * 60 * 24); // 24 hours
 const uint32_t P2P_IP_FAILS_BEFORE_BLOCK = 10;
 const uint32_t P2P_IDLE_CONNECTION_KILL_INTERVAL = (5 * 60); // 5 minutes
 
-const char P2P_STAT_TRUSTED_PUB_KEY[] = "8f80f9a5a434a9f1510d13336228debfee9c918ce505efe225d8c94d045fa115";
+const char P2P_STAT_TRUSTED_PUB_KEY[] = "B35F4E8D8B5F79CBD957661A24F6AEA8B37C013C67B78797E19F6E1A80689B15";
 
 const char* const SEED_NODES[] = {
   "95.179.157.32:49200",
