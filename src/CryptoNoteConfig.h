@@ -47,19 +47,24 @@ const uint64_t CRYPTONOTE_BLOCK_FUTURE_TIME_LIMIT_V1 = DIFFICULTY_TARGET * 3;
 const size_t BLOCKCHAIN_TIMESTAMP_CHECK_WINDOW = 60;
 const size_t BLOCKCHAIN_TIMESTAMP_CHECK_WINDOW_V1 = 11;
 
-// MONEY_SUPPLY - total number coins to be generated
+// MONEY_SUPPLY - total number of coins to be generated
 const uint64_t COIN = UINT64_C(1000000000000); // 1 coin = 10^12 atomic units
 const uint64_t MONEY_SUPPLY = UINT64_C(300000000) * COIN; // 300 million coins in atomic units
 const uint64_t FIXED_BLOCK_REWARD = 57 * COIN + (6 * COIN / 10); // 57.06 coins in atomic units
 const uint64_t TAIL_EMISSION_REWARD = 0.3 * COIN; // 0.3 coins in atomic units
-const uint64_t DEVELOPER_FEE_INTERVAL = 10; // One out of every 10 blocks
+
+// Developer fee configurations
+const uint32_t HARD_FORK_HEIGHT_DEVELOPER_FEE = 10000; // Block height where hardfork activates for mainnet
+const uint32_t TESTNET_HARD_FORK_HEIGHT_DEVELOPER_FEE = 50; // Block height where hardfork activates for testnet
+const uint64_t FIXED_DEVELOPER_FEE = 5 * COIN + (6 * COIN / 10); // 5.76 coins in atomic units
+const uint64_t DEVELOPER_FEE_INTERVAL = 10; // One out of every 10 blocks before hardfork
+
 const std::string DEVELOPER_ADDRESS = "dmeUv7tgJW56TSHJZdesh9jVaVefLXTh6GC7AAb9anC5KPpGs9YhWUD4eGcTsRcwuzibx67C2ngc1MHxdU7noWeL9HvoygKk1Q";
 const uint64_t GENESIS_BLOCK_TIMESTAMP = 1724697600; // Timestamp for August 26th
 const char GENESIS_COINBASE_TX_HEX[] = "010a01ff00018080a8dcb08c0d027ea490fe4f138411f80d0088935092dbdb9ba784eb1e8cbd5d898eae9aa763d321016f71e7352dded23b8fd5289c728b9efa30dd0c0a14dbf3cc5e9bcad1dfd41493"; // Replace with actual hex
 
 const uint64_t TESTNET_GENESIS_BLOCK_TIMESTAMP = 1609459200; // Example timestamp for January 1, 2021
 const char TESTNET_GENESIS_COINBASE_TX_HEX[] = "010a01ff00018080a8dcb08c0d02ddb3ad18dfcb4cd95e04e0c477c00e2b1a67aa2e5a573bbca999e559abdb585421016fc53b9bf4553f012db69816864dc3c2f6c5ea7b2a72a00068a50f239e60e85a";
-
 
 const size_t CRYPTONOTE_COIN_VERSION = 1;
 const unsigned EMISSION_SPEED_FACTOR = 20; // Adjusted emission speed factor
@@ -141,11 +146,11 @@ const char CRYPTONOTE_POOLDATA_FILENAME[] = "poolstate.bin";
 const char P2P_NET_DATA_FILENAME[] = "p2pstate.bin";
 const char CRYPTONOTE_BLOCKCHAIN_INDICES_FILENAME[] = "blockchainindices.dat";
 const char MINER_CONFIG_FILE_NAME[] = "miner_conf.json";
+
 } // parameters
 
 const char CRYPTONOTE_NAME[] = "dogemone";
 const char CRYPTONOTE_TICKER[] = "DME";
-// const char GENESIS_COINBASE_TX_HEX[] = "your_genesis_coinbase_tx_hex_here"; // Replace with actual hex
 
 const static boost::uuids::uuid CRYPTONOTE_NETWORK = { {
     0x23, 0x2e, 0x55, 0x37, 0xe4, 0x7b, 0x22, 0xd2,
