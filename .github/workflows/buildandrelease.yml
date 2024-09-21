@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Install dependencies
         run: |
@@ -29,7 +29,7 @@ jobs:
           zip -r ubuntu-20.04-build.zip ./*
 
       - name: Upload Release Artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ubuntu-20.04-build
           path: build/src/ubuntu-20.04-build.zip
@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Install dependencies
         run: |
@@ -57,7 +57,7 @@ jobs:
           zip -r ubuntu-22.04-build.zip ./*
 
       - name: Upload Release Artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ubuntu-22.04-build
           path: build/src/ubuntu-22.04-build.zip
@@ -66,7 +66,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Install dependencies
         run: |
@@ -84,7 +84,7 @@ jobs:
           zip -r macos-build.zip ./*
 
       - name: Upload Release Artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: macos-build
           path: build/src/macos-build.zip
@@ -93,7 +93,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Setup MSYS2
         uses: msys2/setup-msys2@v2
@@ -117,7 +117,7 @@ jobs:
           7z a windows-build.zip build\src\*
 
       - name: Upload Release Artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: windows-build
           path: windows-build.zip
@@ -127,25 +127,25 @@ jobs:
     needs: [build-ubuntu-2004, build-ubuntu-2204, build-macos, build-windows]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Download Artifacts (Ubuntu 20.04)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: ubuntu-20.04-build
 
       - name: Download Artifacts (Ubuntu 22.04)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: ubuntu-22.04-build
 
       - name: Download Artifacts (macOS)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: macos-build
 
       - name: Download Artifacts (Windows)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: windows-build
 
