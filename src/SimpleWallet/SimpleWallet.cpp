@@ -2553,12 +2553,12 @@ int main(int argc, char* argv[]) {
       CryptoNote::Currency tmp_currency = CryptoNote::CurrencyBuilder(logManager).currency();
       CryptoNote::simple_wallet tmp_wallet(dispatcher, tmp_currency, logManager);
 
-      std::cout << CRYPTONOTE_NAME << " wallet v" << "1.0.2" << std::endl;
+      std::cout << CRYPTONOTE_NAME << " wallet v" << "1.0.5" << std::endl;
       std::cout << "Usage: simplewallet [--wallet-file=<file>|--generate-new-wallet=<file>] [--daemon-address=<host>:<port>] [<COMMAND>]";
       std::cout << desc_all << '\n' << tmp_wallet.get_commands_str();
       return false;
     } else if (command_line::get_arg(vm, command_line::arg_version))  {
-      std::cout << CRYPTONOTE_NAME << " wallet v" << "1.0.2";
+      std::cout << CRYPTONOTE_NAME << " wallet v" << "1.0.5";
       return false;
     }
 
@@ -2605,7 +2605,7 @@ int main(int argc, char* argv[]) {
 
   logManager.configure(buildLoggerConfiguration(logLevel, cfgLogFile));
 
-  logger(INFO, BRIGHT_WHITE) << CRYPTONOTE_NAME << " wallet v" << "1.0.2";
+  logger(INFO, BRIGHT_WHITE) << CRYPTONOTE_NAME << " wallet v" << "1.0.5";
 
   CryptoNote::Currency currency = CryptoNote::CurrencyBuilder(logManager).
     testnet(command_line::get_arg(vm, arg_testnet)).currency();

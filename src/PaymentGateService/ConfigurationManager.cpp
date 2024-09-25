@@ -78,7 +78,7 @@ bool ConfigurationManager::init(int argc, char** argv) {
   }
 
   if (cmdOptions.count("version") > 0) {
-    std::cout << "walletd v" << "1.0.2";
+    std::cout << "walletd v" << "1.0.5";
     return false;
   }
 
