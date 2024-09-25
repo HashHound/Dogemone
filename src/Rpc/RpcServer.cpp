@@ -2599,29 +2599,41 @@ namespace {
 
 bool RpcServer::on_getblocktemplate(const COMMAND_RPC_GETBLOCKTEMPLATE::request& req, COMMAND_RPC_GETBLOCKTEMPLATE::response& res) {
   if (req.reserve_size > TX_EXTRA_NONCE_MAX_COUNT) {
-    throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_TOO_BIG_RESERVE_SIZE, "To big reserved size, maximum 255" };
+    throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_TOO_BIG_RESERVE_SIZE, "Too big reserved size, maximum 255" };
   }
 
   AccountKeys keys = boost::value_initialized<AccountKeys>();
 
-  Crypto::Hash key_hash;
-  size_t size;
-  if (!Common::fromHex(req.miner_spend_key, &key_hash, sizeof(key_hash), size) || size != sizeof(key_hash)) {
-    throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_WRONG_PARAM, "Failed to parse miner spend key" };
-  }
-  keys.spendSecretKey = *(struct Crypto::SecretKey *) &key_hash;
+  // Only process spend and view keys if they are provided
+  if (!req.miner_spend_key.empty()) {
+    Crypto::Hash key_hash;
+    size_t size;
+    if (!Common::fromHex(req.miner_spend_key, &key_hash, sizeof(key_hash), size) || size != sizeof(key_hash)) {
+      throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_WRONG_PARAM, "Failed to parse miner spend key" };
+    }
+    keys.spendSecretKey = *(struct Crypto::SecretKey *)&key_hash;
 
-  if (!Common::fromHex(req.miner_view_key, &key_hash, sizeof(key_hash), size) || size != sizeof(key_hash)) {
-    throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_WRONG_PARAM, "Failed to parse miner view key" };
+    // Generate public key from secret key
+    Crypto::secret_key_to_public_key(keys.spendSecretKey, keys.address.spendPublicKey);
   }
-  keys.viewSecretKey = *(struct Crypto::SecretKey *) &key_hash;
 
-  Crypto::secret_key_to_public_key(keys.spendSecretKey, keys.address.spendPublicKey);
-  Crypto::secret_key_to_public_key(keys.viewSecretKey, keys.address.viewPublicKey);
+  if (!req.miner_view_key.empty()) {
+    Crypto::Hash key_hash;
+    size_t size;
+    if (!Common::fromHex(req.miner_view_key, &key_hash, sizeof(key_hash), size) || size != sizeof(key_hash)) {
+      throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_WRONG_PARAM, "Failed to parse miner view key" };
+    }
+    keys.viewSecretKey = *(struct Crypto::SecretKey *)&key_hash;
+
+    // Generate public key from secret key
+    Crypto::secret_key_to_public_key(keys.viewSecretKey, keys.address.viewPublicKey);
+  }
 
   Block b = boost::value_initialized<Block>();
   CryptoNote::BinaryArray blob_reserve;
   blob_reserve.resize(req.reserve_size, 0);
+
+  // Pass the keys, whether empty or valid
   if (!m_core.get_block_template(b, keys, res.difficulty, res.height, blob_reserve)) {
     logger(Logging::ERROR) << "Failed to create block template";
     throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_INTERNAL_ERROR, "Internal error: failed to create block template" };
@@ -2640,7 +2652,7 @@ bool RpcServer::on_getblocktemplate(const COMMAND_RPC_GETBLOCKTEMPLATE::request&
       logger(Logging::ERROR) << "Failed to find tx pub key in blockblob";
       throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_INTERNAL_ERROR, "Internal error: failed to create block template" };
     }
-    res.reserved_offset += sizeof(tx_pub_key) + 3; //3 bytes: tag for TX_EXTRA_TAG_PUBKEY(1 byte), tag for TX_EXTRA_NONCE(1 byte), counter in TX_EXTRA_NONCE(1 byte)
+    res.reserved_offset += sizeof(tx_pub_key) + 3; // 3 bytes: tag for TX_EXTRA_TAG_PUBKEY(1 byte), tag for TX_EXTRA_NONCE(1 byte), counter in TX_EXTRA_NONCE(1 byte)
     if (res.reserved_offset + req.reserve_size > block_blob.size()) {
       logger(Logging::ERROR) << "Failed to calculate offset for reserved bytes";
       throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_INTERNAL_ERROR, "Internal error: failed to create block template" };
