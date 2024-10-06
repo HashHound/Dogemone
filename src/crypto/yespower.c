@@ -1190,12 +1190,9 @@ int yespower(yespower_local_t *local,
     ctx.S2 = S + 2 * Swidth_to_Sbytes1(Swidth);
     ctx.w = 0;
 
-    if (pers) {
-        src = pers;
-        srclen = perslen;
-    } else {
-        srclen = 0;
-    }
+    // Removed personalization field to support pool mining
+    srclen = 0;  // Always use raw data without custom `pers` field
+
 
     pbkdf2_blake256(init_hash, sizeof(init_hash), src, srclen, 1, B, 128);
     memcpy(init_hash, B, sizeof(init_hash));

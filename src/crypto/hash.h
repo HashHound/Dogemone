@@ -64,20 +64,20 @@ namespace Crypto {
     cn_slow_hash(data, length, reinterpret_cast<char *>(&hash));
   }
 
-  inline bool y_slow_hash(const void* data, size_t length, const Hash& seed, Hash& hash) {
-    yespower_params_t yespower_params = {
-      2048,
-      32,
-      seed.data,
-      sizeof(seed)
-    };
+  inline bool y_slow_hash(const void* data, size_t length, Hash& hash) {
+  yespower_params_t yespower_params = {
+    2048,
+    32,
+    NULL,  // Signature removed
+    0
+  };
 
-    if (yespower_tls((unsigned char *)data, length, &yespower_params, (yespower_binary_t *)hash.data)) {
-      return false;
-    }
-
-    return true;
+  if (yespower_tls((unsigned char *)data, length, &yespower_params, (yespower_binary_t *)hash.data)) {
+    return false;
   }
+
+  return true;
+}
 
   inline void tree_hash(const Hash *hashes, size_t count, Hash &root_hash) {
     tree_hash(reinterpret_cast<const char (*)[HASH_SIZE]>(hashes), count, reinterpret_cast<char *>(&root_hash));
