@@ -80,7 +80,7 @@ namespace CryptoNote {
 			m_upgradeHeightV2 = 10;
 			m_upgradeHeightV3 = 60;
 			m_upgradeHeightV4 = 70;
-			m_upgradeHeightV5 = 4294967294;
+			m_upgradeHeightV5 = 90;
 			m_upgradeHeightV6 = 4294967294;
 			m_blocksFileName = "testnet_" + m_blocksFileName;
 			m_blocksCacheFileName = "testnet_" + m_blocksCacheFileName;
