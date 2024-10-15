@@ -119,13 +119,13 @@ const size_t FUSION_TX_MIN_INPUT_COUNT = 12;
 const size_t FUSION_TX_MIN_IN_OUT_COUNT_RATIO = 4;
 
 const uint32_t UPGRADE_HEIGHT_V2 = 75000; // Block v2, pre-LWMA
-const uint32_t UPGRADE_HEIGHT_V3 = 75000; // Block v3, LWMA1
-const uint32_t UPGRADE_HEIGHT_V3_1 = 75000; // Min fee v2, cap max mixin
-const uint32_t UPGRADE_HEIGHT_V4 = 75000; // Block v4, LWMA2, adaptive min fee, min mixin, disable slave merge mining
-const uint32_t UPGRADE_HEIGHT_V4_1 = 75000; // LWMA3
-const uint32_t UPGRADE_HEIGHT_V4_2 = 75000; // Fee per-byte for extra, ban unmixable denominations
-const uint32_t UPGRADE_HEIGHT_V4_3 = 75000; // Fixed min fee + fee per-byte for extra
-const uint32_t UPGRADE_HEIGHT_V5 = 75000; // Block v5, back to LWMA1+, Alt Proof-of-Work
+const uint32_t UPGRADE_HEIGHT_V3 = 76000; // Block v3, LWMA1
+const uint32_t UPGRADE_HEIGHT_V3_1 = 77000; // Min fee v2, cap max mixin
+const uint32_t UPGRADE_HEIGHT_V4 = 78000; // Block v4, LWMA2, adaptive min fee, min mixin, disable slave merge mining
+const uint32_t UPGRADE_HEIGHT_V4_1 = 79000; // LWMA3
+const uint32_t UPGRADE_HEIGHT_V4_2 = 80000; // Fee per-byte for extra, ban unmixable denominations
+const uint32_t UPGRADE_HEIGHT_V4_3 = 81000; // Fixed min fee + fee per-byte for extra
+const uint32_t UPGRADE_HEIGHT_V5 = 82000; // Block v5, back to LWMA1+, Alt Proof-of-Work
 const uint32_t UPGRADE_HEIGHT_V6 = 4294967294; // Block v6
 
 const unsigned UPGRADE_VOTING_THRESHOLD = 90; // percent

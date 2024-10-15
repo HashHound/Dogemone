@@ -78,9 +78,9 @@ namespace CryptoNote {
 
 		if (isTestnet()) {
 			m_upgradeHeightV2 = 10;
-			m_upgradeHeightV3 = 10;
-			m_upgradeHeightV4 = 10;
-			m_upgradeHeightV5 = 10;
+			m_upgradeHeightV3 = 20;
+			m_upgradeHeightV4 = 60;
+			m_upgradeHeightV5 = 70;
 			m_upgradeHeightV6 = 4294967294;
 			m_blocksFileName = "testnet_" + m_blocksFileName;
 			m_blocksCacheFileName = "testnet_" + m_blocksCacheFileName;
