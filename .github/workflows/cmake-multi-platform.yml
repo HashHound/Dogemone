@@ -49,5 +49,5 @@ jobs:
         shell: msys2 {0}
         run: |
           mkdir -p build && cd build
-          cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+          cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DBoost_NO_WARN_NEW_VERSIONS=1
           mingw32-make
