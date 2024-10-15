@@ -91,6 +91,7 @@ jobs:
 
   build-windows:
     runs-on: windows-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -99,6 +100,7 @@ jobs:
         uses: msys2/setup-msys2@v2
         with:
           update: true
+          msystem: MINGW64
           install: >-
             mingw-w64-x86_64-toolchain
             mingw-w64-x86_64-cmake
