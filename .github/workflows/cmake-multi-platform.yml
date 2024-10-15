@@ -41,7 +41,7 @@ jobs:
           install: >-
             mingw-w64-x86_64-toolchain
             mingw-w64-x86_64-cmake
-            mingw-w64-x86_64-boost
+            mingw-w64-x86_64-boost1.71
             mingw-w64-x86_64-openssl
             mingw-w64-x86_64-python-numpy
 
@@ -49,5 +49,5 @@ jobs:
         shell: msys2 {0}
         run: |
           mkdir -p build && cd build
-          cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DBoost_NO_WARN_NEW_VERSIONS=1
+          cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DBOOST_ROOT="/mingw64/boost_1_71_0" -DBoost_NO_WARN_NEW_VERSIONS=1
           mingw32-make
