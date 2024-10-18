@@ -396,7 +396,7 @@ bool Blockchain::have_tx_keyimg_as_spent(const Crypto::KeyImage &key_im) {
 
 bool Blockchain::checkIfSpent(const Crypto::KeyImage& keyImage, uint32_t blockIndex) {
   std::lock_guard<decltype(m_blockchain_lock)> lk(m_blockchain_lock);
-  
+
   auto it = m_spent_key_images.find(keyImage);
   if (it == m_spent_key_images.end()) {
     return false;
@@ -747,7 +747,7 @@ difficulty_type Blockchain::getDifficultyForNextBlock(const Crypto::Hash &prevHa
 
   Crypto::Hash h = prevHash;
 
-  do {  
+  do {
     uint32_t bh = 0;
     BlockEntry b;
     if (getBlockHeight(h, bh)) {
@@ -768,7 +768,7 @@ difficulty_type Blockchain::getDifficultyForNextBlock(const Crypto::Hash &prevHa
     timestamps.push_back(b.bl.timestamp);
     cumulative_difficulties.push_back(b.cumulative_difficulty);
     processed++;
-  
+
     h = b.bl.previousBlockHash;
 
   } while (processed < difficultyBlocksCount);
@@ -1025,16 +1025,18 @@ bool Blockchain::switch_to_alternative_blockchain(const std::list<Crypto::Hash>&
 
 bool Blockchain::prevalidate_miner_transaction(const Block& b, uint32_t height) {
 
+  // Check if the coinbase transaction has exactly one input
   if (!(b.baseTransaction.inputs.size() == 1)) {
     logger(ERROR, BRIGHT_RED)
       << "Coinbase transaction in the block has no inputs";
     return false;
   }
 
-  if (b.majorVersion >= CryptoNote::BLOCK_MAJOR_VERSION_5) {
+  // Validation for block versions >= 5 and < 6 (only 1 output allowed)
+  if (b.majorVersion >= CryptoNote::BLOCK_MAJOR_VERSION_5 && b.majorVersion < CryptoNote::BLOCK_MAJOR_VERSION_6) {
     if (!(b.baseTransaction.outputs.size() == 1)) {
       logger(ERROR, BRIGHT_RED)
-        << "Only 1 output in coinbase transaction allowed";
+        << "Only 1 output in coinbase transaction allowed for block version 5";
       return false;
     }
 
@@ -1043,26 +1045,47 @@ bool Blockchain::prevalidate_miner_transaction(const Block& b, uint32_t height) 
         << "Coinbase transaction in the block has the wrong output type";
       return false;
     }
+
+  } else if (b.majorVersion >= CryptoNote::BLOCK_MAJOR_VERSION_6) {
+    // Validation for block version 6 and above (multiple outputs allowed)
+    if (b.baseTransaction.outputs.empty()) {
+      logger(ERROR, BRIGHT_RED)
+        << "Coinbase transaction in the block must have at least one output";
+      return false;
+    }
+
+    // Optional: Ensure all outputs are of KeyOutput type
+    for (size_t i = 0; i < b.baseTransaction.outputs.size(); ++i) {
+      if (!(b.baseTransaction.outputs[i].target.type() == typeid(KeyOutput))) {
+        logger(ERROR, BRIGHT_RED)
+          << "Coinbase transaction in the block has the wrong output type at index " << i;
+        return false;
+      }
+    }
   }
 
+  // Ensure that the coinbase transaction has no signatures
   if (!(b.baseTransaction.signatures.empty())) {
     logger(ERROR, BRIGHT_RED)
       << "Coinbase transaction in the block shouldn't have signatures";
     return false;
   }
 
+  // Ensure that the coinbase transaction's input is of type BaseInput
   if (!(b.baseTransaction.inputs[0].type() == typeid(BaseInput))) {
     logger(ERROR, BRIGHT_RED)
       << "Coinbase transaction in the block has the wrong input type";
     return false;
   }
 
+  // Ensure the block index matches the expected height
   if (boost::get<BaseInput>(b.baseTransaction.inputs[0]).blockIndex != height) {
     logger(INFO, BRIGHT_RED) << "The miner transaction in block has invalid height: " <<
       boost::get<BaseInput>(b.baseTransaction.inputs[0]).blockIndex << ", expected: " << height;
     return false;
   }
 
+  // Ensure the unlock time is correctly set
   if (!(b.baseTransaction.unlockTime == height + m_currency.minedMoneyUnlockWindow())) {
     logger(ERROR, BRIGHT_RED)
       << "Coinbase transaction has wrong unlock time="
@@ -1071,12 +1094,14 @@ bool Blockchain::prevalidate_miner_transaction(const Block& b, uint32_t height) 
     return false;
   }
 
+  // Check for money overflow in the coinbase transaction
   if (!check_outs_overflow(b.baseTransaction)) {
     logger(ERROR, BRIGHT_RED) << "The miner transaction has money overflow in block " << get_block_hash(b);
     return false;
   }
 
-  uint64_t extraSize = (uint64_t)b.baseTransaction.extra.size();
+  // Check if the extra field is too large (for specific upgrade heights)
+  uint64_t extraSize = static_cast<uint64_t>(b.baseTransaction.extra.size());
   if (height > CryptoNote::parameters::UPGRADE_HEIGHT_V4_2 && extraSize > CryptoNote::parameters::MAX_EXTRA_SIZE) {
     logger(ERROR, BRIGHT_RED)
       << "The miner transaction extra is too large in block "
@@ -1124,7 +1149,7 @@ bool Blockchain::validate_block_signature(const Block& b, const Crypto::Hash& id
   if (b.majorVersion >= CryptoNote::BLOCK_MAJOR_VERSION_5) {
     BinaryArray ba;
     if (!get_block_hashing_blob(b, ba)) {
-      logger(ERROR, BRIGHT_RED) << 
+      logger(ERROR, BRIGHT_RED) <<
         "Failed to get_block_hashing_blob of block " <<
         id << " at height " << height;
       return false;
@@ -1369,7 +1394,7 @@ bool Blockchain::handle_alternative_block(const Block& b, const Crypto::Hash& id
     // check timestamp correct - verify that the block's timestamp is within the acceptable range
     // (not earlier than the median of the last X blocks)
     if (!check_block_timestamp(timestamps, b)) {
-      logger(INFO, BRIGHT_RED) << "Block with id: " << id << ENDL 
+      logger(INFO, BRIGHT_RED) << "Block with id: " << id << ENDL
         << " for alternative chain, have invalid timestamp: " << b.timestamp;
       //add_block_as_invalid(b, id);//do not add blocks to invalid storage before proof of work check was passed
       bvc.m_verification_failed = true;
@@ -1437,7 +1462,7 @@ bool Blockchain::handle_alternative_block(const Block& b, const Crypto::Hash& id
 #endif
 
     auto i_res = m_alternative_chains.insert(blocks_ext_by_hash::value_type(id, bei));
-    if (!(i_res.second)) { 
+    if (!(i_res.second)) {
       logger(ERROR, BRIGHT_RED) << "insertion of new alternative block returned as it already exist";
       return false;
     }
@@ -1459,7 +1484,7 @@ bool Blockchain::handle_alternative_block(const Block& b, const Crypto::Hash& id
         bvc.m_verification_failed = true;
       }
       return r;
-    } 
+    }
     else if (m_blocks.back().cumulative_difficulty < bei.cumulative_difficulty) //if difficulty is bigger than in main chain
     {
       //do reorganize!
@@ -1474,7 +1499,7 @@ bool Blockchain::handle_alternative_block(const Block& b, const Crypto::Hash& id
         bvc.m_verification_failed = true;
       }
       return r;
-    } 
+    }
     else {
       logger(INFO, BRIGHT_BLUE) <<
         "----- BLOCK ADDED AS ALTERNATIVE ON HEIGHT " << bei.height
@@ -1943,7 +1968,7 @@ bool Blockchain::is_tx_spendtime_unlocked(uint64_t unlock_time, uint32_t height)
     if (height - 1 + m_currency.lockedTxAllowedDeltaBlocks() >= unlock_time)
       return true;
   }
-  
+
   return false;
 }
 
@@ -2051,7 +2076,7 @@ bool Blockchain::check_block_timestamp(std::vector<uint64_t> timestamps, const B
   if (b.timestamp < median_ts) {
     logger(INFO, BRIGHT_WHITE)
       << "Timestamp of block with id " << get_block_hash(b) << ", " << b.timestamp
-      << " is less than median of last " << m_currency.timestampCheckWindow(b.majorVersion) << " blocks, " 
+      << " is less than median of last " << m_currency.timestampCheckWindow(b.majorVersion) << " blocks, "
       << median_ts << ", i.e. it's too deep in the past";
     return false;
   }
@@ -2160,7 +2185,7 @@ bool Blockchain::addNewBlock(const Block& bl, block_verification_context& bvc) {
     if (!(bl.previousBlockHash == getTailId())) {
       //chain switching or wrong block
       logger(DEBUGGING) << "handling alternative block " << Common::podToHex(id)
-                        << " at height " << boost::get<BaseInput>(bl.baseTransaction.inputs.front()).blockIndex 
+                        << " at height " << boost::get<BaseInput>(bl.baseTransaction.inputs.front()).blockIndex
                         << " as it doesn't refer to chain tail " << Common::podToHex(getTailId())
                         << ", its prev. block hash: " << Common::podToHex(bl.previousBlockHash);
       bvc.m_added_to_main_chain = false;
