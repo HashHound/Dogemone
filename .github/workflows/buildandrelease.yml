@@ -89,7 +89,7 @@ jobs:
           name: macos-build
           path: build/src/macos-build.zip
 
-  build-windows:
+ build-windows:
     runs-on: windows-latest
     steps:
       - name: Checkout code
@@ -106,7 +106,7 @@ jobs:
 
       - name: Download and Install Boost 1.71
         run: |
-          curl -L -o boost_1_71_0.tar.gz https://sourceforge.net/projects/boost/files/boost/1.71.0/boost_1_71_0.tar.gz/download
+          curl -L -o boost_1_71_0.tar.gz https://boostorg.jfrog.io/artifactory/main/release/1.71.0/source/boost_1_71_0.tar.gz
           tar -xzf boost_1_71_0.tar.gz
           cd boost_1_71_0
           ./bootstrap.sh
