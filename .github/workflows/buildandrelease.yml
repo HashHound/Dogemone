@@ -103,7 +103,6 @@ jobs:
             mingw-w64-x86_64-toolchain
             mingw-w64-x86_64-cmake
             mingw-w64-x86_64-openssl
-            mingw-w64-x86_64-boost # Boost version 1.71 is not available directly through MSYS2 package, so install via a precompiled source or specify Boost path.
 
       - name: Download and Install Boost 1.71
         run: |
