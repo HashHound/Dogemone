@@ -118,15 +118,15 @@ const size_t FUSION_TX_MAX_SIZE = CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V1 *
 const size_t FUSION_TX_MIN_INPUT_COUNT = 12;
 const size_t FUSION_TX_MIN_IN_OUT_COUNT_RATIO = 4;
 
-const uint32_t UPGRADE_HEIGHT_V2 = 77000; // Block v2, pre-LWMA
-const uint32_t UPGRADE_HEIGHT_V3 = 77100; // Block v3, LWMA1
-const uint32_t UPGRADE_HEIGHT_V3_1 = 77200; // Min fee v2, cap max mixin
-const uint32_t UPGRADE_HEIGHT_V4 = 77300; // Block v4, LWMA2, adaptive min fee, min mixin, disable slave merge mining
-const uint32_t UPGRADE_HEIGHT_V4_1 = 77320; // LWMA3
-const uint32_t UPGRADE_HEIGHT_V4_2 = 77340; // Fee per-byte for extra, ban unmixable denominations
-const uint32_t UPGRADE_HEIGHT_V4_3 = 77350; // Fixed min fee + fee per-byte for extra
-const uint32_t UPGRADE_HEIGHT_V5 = 78000; // Block v5, back to LWMA1+, Alt. Signed Proof-of-Work
-const uint32_t UPGRADE_HEIGHT_V6 = 4294967294; // Block v6
+const uint32_t UPGRADE_HEIGHT_V2 = 81000; // Block v2, pre-LWMA
+const uint32_t UPGRADE_HEIGHT_V3 = 81100; // Block v3, LWMA1
+const uint32_t UPGRADE_HEIGHT_V3_1 = 81100; // Min fee v2, cap max mixin
+const uint32_t UPGRADE_HEIGHT_V4 = 81300; // Block v4, LWMA2, adaptive min fee, min mixin, disable slave merge mining
+const uint32_t UPGRADE_HEIGHT_V4_1 = 81320; // LWMA3
+const uint32_t UPGRADE_HEIGHT_V4_2 = 81340; // Fee per-byte for extra, ban unmixable denominations
+const uint32_t UPGRADE_HEIGHT_V4_3 = 81350; // Fixed min fee + fee per-byte for extra
+const uint32_t UPGRADE_HEIGHT_V5 = 82000; // Block v5, back to LWMA1+, Alt. Signed Proof-of-Work
+const uint32_t UPGRADE_HEIGHT_V6 = 82005; // Block v6
 
 const unsigned UPGRADE_VOTING_THRESHOLD = 90; // percent
 const uint32_t UPGRADE_VOTING_WINDOW = EXPECTED_NUMBER_OF_BLOCKS_PER_DAY; // blocks
