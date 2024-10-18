@@ -105,11 +105,14 @@ jobs:
             mingw-w64-x86_64-boost
             mingw-w64-x86_64-openssl
 
+      - name: Set BOOST_ROOT environment variable
+        run: echo "BOOST_ROOT=/mingw64" >> $GITHUB_ENV
+
       - name: Build
         shell: msys2 {0}
         run: |
           mkdir -p build && cd build
-          cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+          cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -Wno-dev
           mingw32-make
 
       - name: Archive Release Artifacts
