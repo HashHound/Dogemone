@@ -25,24 +25,3 @@ jobs:
         cd build
         cmake -DCMAKE_BUILD_TYPE=Release ..
         make
-        
-  build-windows:
-    runs-on: windows-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Install dependencies
-        run: |
-          choco install cmake -y
-          choco install git -y
-          choco install 7zip -y
-          choco install visualstudio2019enterprise -y --includeOptional --includeRecommended
-          choco install boost-msvc-14.2 -y
-
-      - name: Build
-        run: |
-          mkdir build && cd build
-          cmake -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release ..
-          cmake --build . --config Release
