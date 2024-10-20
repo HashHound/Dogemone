@@ -105,6 +105,24 @@ jobs:
     needs: [build-ubuntu-2004, build-ubuntu-2204, build-macos]
     runs-on: ubuntu-latest
     steps:
+      - name: Download Ubuntu 20.04 Build Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: ubuntu-20.04-build
+          path: build/src
+
+      - name: Download Ubuntu 22.04 Build Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: ubuntu-22.04-build
+          path: build/src
+
+      - name: Download macOS Build Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: macos-build
+          path: build/src
+
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
