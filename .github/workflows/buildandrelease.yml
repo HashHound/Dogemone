@@ -89,49 +89,6 @@ jobs:
           name: macos-build
           path: build/src/macos-build.zip
 
- build-windows:
-    runs-on: windows-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Setup MSYS2
-        uses: msys2/setup-msys2@v2
-        with:
-          update: true
-          install: >-
-            mingw-w64-x86_64-toolchain
-            mingw-w64-x86_64-cmake
-            mingw-w64-x86_64-openssl
-
-      - name: Download and Install Boost 1.71
-        run: |
-          curl -L -o boost_1_71_0.tar.gz https://boostorg.jfrog.io/artifactory/main/release/1.71.0/source/boost_1_71_0.tar.gz
-          tar -xzf boost_1_71_0.tar.gz
-          cd boost_1_71_0
-          ./bootstrap.sh
-          ./b2 install --prefix=/mingw64
-
-      - name: Set BOOST_ROOT environment variable
-        run: echo "BOOST_ROOT=/mingw64" >> $GITHUB_ENV
-
-      - name: Build
-        shell: msys2 {0}
-        run: |
-          mkdir -p build && cd build
-          cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -Wno-dev
-          mingw32-make
-
-      - name: Archive Release Artifacts
-        run: |
-          7z a windows-build.zip build\src\*
-
-      - name: Upload Release Artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: windows-build
-          path: windows-build.zip
-
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -171,14 +128,4 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: macos-build.zip
           asset_name: macos-build.zip
-          asset_content_type: application/zip
-
-      - name: Upload Release Asset (Windows)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT_GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: windows-build.zip
-          asset_name: windows-build.zip
           asset_content_type: application/zip
