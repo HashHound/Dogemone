@@ -89,7 +89,7 @@ jobs:
           name: macos-build
           path: build/src/macos-build.zip
 
-  build-windows:
+ build-windows:
     runs-on: windows-latest
     steps:
       - name: Checkout code
