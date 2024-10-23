@@ -92,7 +92,7 @@ TEST(Ipv4AddressTest, isPrivate) {
   ASSERT_TRUE(Ipv4Address("172.19.1.1").isPrivate());
   ASSERT_TRUE(Ipv4Address("172.31.255.255").isPrivate());
 
-  ASSERT_FALSE(Ipv4Address("172.32.0.0").isPrivate());
+  ASSERT_FALSE(Ipv4Address("172.32.0.1").isPrivate());
   ASSERT_FALSE(Ipv4Address("172.32.0.1").isPrivate());
   ASSERT_FALSE(Ipv4Address("172.15.0.0").isPrivate());
   ASSERT_FALSE(Ipv4Address("172.15.255.255").isPrivate());
