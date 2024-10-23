@@ -152,15 +152,22 @@ namespace CryptoNote {
 		}
 	}
 
-	uint64_t Currency::calculateReward(uint64_t alreadyGeneratedCoins) const {
-    const uint64_t FIXED_BLOCK_REWARD = 57 * CryptoNote::parameters::COIN + (6 * CryptoNote::parameters::COIN / 10); // 57.06 coins in atomic units
-    const uint64_t TAIL_EMISSION_REWARD = 0.3 * CryptoNote::parameters::COIN; // Tail emission reward in atomic units
+	uint64_t Currency::calculateReward(uint64_t alreadyGeneratedCoins, uint8_t blockMajorVersion) const {
+    const uint64_t FIXED_BLOCK_REWARD = 57 * CryptoNote::parameters::COIN + (6 * CryptoNote::parameters::COIN / 10); // 57.6 DME
+    const uint64_t TAIL_EMISSION_REWARD = 0.3 * CryptoNote::parameters::COIN; // 0.3 DME
 
+    // For block major version 2, reset the reward logic to fixed reward
+    if (blockMajorVersion >= BLOCK_MAJOR_VERSION_2) {
+        if (alreadyGeneratedCoins >= m_moneySupply) {
+            return FIXED_BLOCK_REWARD; // Continue with original reward for version 6
+        }
+    }
+
+    // Original tail emission logic for older block versions
     if (alreadyGeneratedCoins >= m_moneySupply) {
         return TAIL_EMISSION_REWARD; // Tail emission phase
     }
 
-    // Initial emission phase with fixed block reward
     return FIXED_BLOCK_REWARD;
 }
 
