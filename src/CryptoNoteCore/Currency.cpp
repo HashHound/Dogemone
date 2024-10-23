@@ -152,12 +152,12 @@ namespace CryptoNote {
 		}
 	}
 
-	uint64_t Currency::calculateReward(uint64_t alreadyGeneratedCoins) const {
+	uint64_t Currency::calculateReward(uint64_t alreadyGeneratedCoins, uint8_t blockMajorVersion) const {
     const uint64_t FIXED_BLOCK_REWARD = 57 * CryptoNote::parameters::COIN + (6 * CryptoNote::parameters::COIN / 10); // 57.06 coins in atomic units
     const uint64_t TAIL_EMISSION_REWARD = 0.3 * CryptoNote::parameters::COIN; // Tail emission reward in atomic units
 
-		// For block major version 3, reset the reward logic to fixed reward
-    if (blockMajorVersion >= BLOCK_MAJOR_VERSION_3) {
+		// For block major version 2, reset the reward logic to fixed reward
+    if (blockMajorVersion >= BLOCK_MAJOR_VERSION_2) {
         if (alreadyGeneratedCoins >= m_moneySupply) {
             return FIXED_BLOCK_REWARD; // Continue with original reward for version 6
         }
@@ -173,7 +173,7 @@ namespace CryptoNote {
 
 bool Currency::getBlockReward(uint8_t blockMajorVersion, size_t medianSize, size_t currentBlockSize, uint64_t alreadyGeneratedCoins,
 	uint64_t fee, uint64_t& reward, int64_t& emissionChange) const {
-	uint64_t baseReward = calculateReward(alreadyGeneratedCoins);
+	uint64_t baseReward = calculateReward(alreadyGeneratedCoins, blockMajorVersion);
 
 	size_t blockGrantedFullRewardZone = blockGrantedFullRewardZoneByBlockVersion(blockMajorVersion);
 	medianSize = std::max(medianSize, blockGrantedFullRewardZone);
