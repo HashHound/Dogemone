@@ -86,7 +86,7 @@ namespace CryptoNote {
     bool getTransactionHeight(const Crypto::Hash &txId, uint32_t& blockHeight);
 
     template<class archive_t> void serialize(archive_t & ar, const unsigned int version);
-    
+
     bool haveTransaction(const Crypto::Hash &id);
     bool haveTransactionKeyImagesAsSpent(const Transaction &tx);
 
@@ -297,6 +297,7 @@ namespace CryptoNote {
     UpgradeDetector m_upgradeDetectorV4;
     UpgradeDetector m_upgradeDetectorV5;
     UpgradeDetector m_upgradeDetectorV6;
+    UpgradeDetector m_upgradeDetectorV7;
 
     PaymentIdIndex m_paymentIdIndex;
     TimestampBlocksIndex m_timestampIndex;
@@ -417,4 +418,3 @@ namespace CryptoNote {
     return true;
   }
 }
-

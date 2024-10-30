@@ -126,7 +126,7 @@ bool serializePod(T& v, Common::StringView name, CryptoNote::ISerializer& serial
 
 bool serializeVarintVector(std::vector<uint32_t>& vector, CryptoNote::ISerializer& serializer, Common::StringView name) {
   size_t size = vector.size();
-  
+
   if (!serializer.beginArray(size, name)) {
     vector.clear();
     return false;
@@ -201,7 +201,7 @@ void serialize(Transaction& tx, ISerializer& serializer) {
   size_t sigSize = tx.inputs.size();
   //TODO: make arrays without sizes
 //  serializer.beginArray(sigSize, "signatures");
-  
+
   //if (serializer.type() == ISerializer::INPUT) {
   // ignore base transaction
   if (serializer.type() == ISerializer::INPUT && !(sigSize == 1 && tx.inputs[0].type() == typeid(BaseInput))) {
@@ -384,12 +384,12 @@ void serialize(ParentBlockSerializer& pbs, ISerializer& serializer) {
 
 void serializeBlockHeader(BlockHeader& header, ISerializer& serializer) {
   serializer(header.majorVersion, "major_version");
-  if (header.majorVersion > BLOCK_MAJOR_VERSION_6) {
+  if (header.majorVersion > BLOCK_MAJOR_VERSION_7) {
     throw std::runtime_error("Wrong major version");
   }
 
   serializer(header.minorVersion, "minor_version");
-  
+
   if (header.majorVersion == BLOCK_MAJOR_VERSION_2 || header.majorVersion == BLOCK_MAJOR_VERSION_3) {
     serializer(header.previousBlockHash, "prev_id");
   } else if (header.majorVersion == BLOCK_MAJOR_VERSION_1 || header.majorVersion >= BLOCK_MAJOR_VERSION_4) {
