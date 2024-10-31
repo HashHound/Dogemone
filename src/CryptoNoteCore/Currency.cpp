@@ -232,8 +232,6 @@ bool Currency::getBlockReward(uint8_t blockMajorVersion, size_t medianSize, size
         return false;
     }
 
-    logger(INFO) << "Calculated block reward: " << formatAmount(blockReward);
-
     uint64_t developerReward = 0;
     uint64_t minerReward = blockReward;
 
