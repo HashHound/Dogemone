@@ -1236,7 +1236,7 @@ bool Blockchain::getBlockLongHash(Crypto::cn_context& context, const Block& b, C
 }
 
 bool Blockchain::getBlockLongHash(Crypto::cn_context& context, const Block& b, Crypto::Hash& res, const std::list<Crypto::Hash>& alt_chain, bool no_blobs) {
-  if (b.majorVersion < CryptoNote::BLOCK_MAJOR_VERSION_5)
+  if (b.majorVersion < CryptoNote::BLOCK_MAJOR_VERSION_5 || b.majorVersion >= CryptoNote::BLOCK_MAJOR_VERSION_7)
     return get_block_longhash(context, b, res);
 
   BinaryArray pot;
@@ -1254,7 +1254,7 @@ bool Blockchain::getBlockLongHash(Crypto::cn_context& context, const Block& b, C
   uint32_t currentHeight = boost::get<BaseInput>(b.baseTransaction.inputs[0]).blockIndex;
   uint32_t maxHeight = std::min<uint32_t>(getCurrentBlockchainHeight() - 1, currentHeight - 1 - static_cast<uint32_t>(m_currency.minedMoneyUnlockWindow()));
 
-#define ITER 128
+  #define ITER 128
   for (uint32_t i = 0; i < ITER; i++) {
     cn_fast_hash(pot.data(), pot.size(), hash_1);
 
