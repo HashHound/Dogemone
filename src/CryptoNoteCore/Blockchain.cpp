@@ -1236,37 +1236,73 @@ bool Blockchain::getBlockLongHash(Crypto::cn_context& context, const Block& b, C
 }
 
 bool Blockchain::getBlockLongHash(Crypto::cn_context& context, const Block& b, Crypto::Hash& res, const std::list<Crypto::Hash>& alt_chain, bool no_blobs) {
+  if (b.majorVersion < CryptoNote::BLOCK_MAJOR_VERSION_5)
+    return get_block_longhash(context, b, res);
+
   BinaryArray pot;
 
-  // Determine the hashing blob based on the block version
-  if (b.majorVersion <= CryptoNote::BLOCK_MAJOR_VERSION_4) {
-    if (!get_block_hashing_blob(b, pot)) {
+  // Use signed blobs for versions 5 and 6, regular blobs for version 7
+  if (b.majorVersion == CryptoNote::BLOCK_MAJOR_VERSION_5 || b.majorVersion == CryptoNote::BLOCK_MAJOR_VERSION_6) {
+    if (!get_signed_block_hashing_blob(b, pot))
       return false;
-    }
-  } else if (b.majorVersion == CryptoNote::BLOCK_MAJOR_VERSION_5 || b.majorVersion == CryptoNote::BLOCK_MAJOR_VERSION_6) {
-    if (!get_signed_block_hashing_blob(b, pot)) {
-      return false;
-    }
   } else if (b.majorVersion == CryptoNote::BLOCK_MAJOR_VERSION_7) {
-    if (!get_block_hashing_blob(b, pot)) {
+    if (!get_block_hashing_blob(b, pot))
       return false;
-    }
-  } else {
-    return false; // Unsupported block version
   }
 
-  // Apply appropriate hashing based on block version
-  if (b.majorVersion <= CryptoNote::BLOCK_MAJOR_VERSION_4) {
-    // Use CryptoNight for versions 1-4
-    cn_slow_hash(context, pot.data(), pot.size(), res);
-  } else if (b.majorVersion >= CryptoNote::BLOCK_MAJOR_VERSION_5) {
-    // Use Yespower
-    Crypto::Hash hash_1, hash_2;
-    if (!Crypto::y_slow_hash(pot.data(), pot.size(), hash_1, hash_2)) {
-      return false;
+  Crypto::Hash hash_1 = {0}, hash_2;
+  uint32_t currentHeight = boost::get<BaseInput>(b.baseTransaction.inputs[0]).blockIndex;
+  uint32_t maxHeight = std::min<uint32_t>(getCurrentBlockchainHeight() - 1, currentHeight - 1 - static_cast<uint32_t>(m_currency.minedMoneyUnlockWindow()));
+
+#define ITER 128
+  for (uint32_t i = 0; i < ITER; i++) {
+    cn_fast_hash(pot.data(), pot.size(), hash_1);
+
+    for (uint8_t j = 1; j <= 8; j++) {
+      uint8_t chunk[4] = {
+        hash_1.data[j * 4 - 4],
+        hash_1.data[j * 4 - 3],
+        hash_1.data[j * 4 - 2],
+        hash_1.data[j * 4 - 1]
+      };
+
+      uint32_t n = (chunk[0] << 24) |
+                   (chunk[1] << 16) |
+                   (chunk[2] << 8)  |
+                   (chunk[3]);
+
+      uint32_t height_j = n % maxHeight;
+      bool found_alt = false;
+      for (const auto& ch_ent : alt_chain) {
+        const Block& b = m_alternative_chains[ch_ent].bl;
+        uint32_t ah = boost::get<BaseInput>(b.baseTransaction.inputs[0]).blockIndex;
+        if (ah == height_j) {
+          BinaryArray ba;
+          if (!get_block_hashing_blob(b, ba)) return false;
+          pot.insert(std::end(pot), std::begin(ba), std::end(ba));
+          found_alt = true;
+        }
+      }
+      if (!found_alt) {
+        if (no_blobs || m_allowDeepReorg) {
+          std::lock_guard<decltype(m_blockchain_lock)> lk(m_blockchain_lock);
+          const Block& bj = m_blocks[height_j].bl;
+          BinaryArray ba;
+          if (!get_block_hashing_blob(bj, ba)) return false;
+          pot.insert(std::end(pot), std::begin(ba), std::end(ba));
+        } else {
+          BinaryArray& ba = m_blobs[height_j];
+          pot.insert(std::end(pot), std::begin(ba), std::end(ba));
+        }
+      }
     }
-    res = hash_2;
   }
+
+  if (!Crypto::y_slow_hash(pot.data(), pot.size(), hash_1, hash_2))
+    return false;
+
+  res = hash_2;
+
   return true;
 }
 
