@@ -793,7 +793,7 @@ bool Currency::getBlockReward(uint8_t blockMajorVersion, size_t medianSize, size
     }
 
 		// Enforce minimum limit for testnet
-    uint64_t minimumDifficulty = 100000; // Set your desired minimum difficulty value
+    uint64_t minimumDifficulty = 1000; // Set your desired minimum difficulty value
     if (isTestnet() && next_D < minimumDifficulty) {
         next_D = minimumDifficulty;
     }
