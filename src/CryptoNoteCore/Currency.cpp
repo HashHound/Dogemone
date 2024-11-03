@@ -792,14 +792,13 @@ bool Currency::getBlockReward(uint8_t blockMajorVersion, size_t medianSize, size
       else { i /= 10; }
     }
 
-		// Enforce minimum limit for testnet
-    uint64_t minimumDifficulty = 1000; // Set your desired minimum difficulty value
-    if (isTestnet() && next_D < minimumDifficulty) {
-        next_D = minimumDifficulty;
+    // minimum limit
+    if (!isTestnet() && next_D < 100000) {
+      next_D = 100000;
     }
 
     return next_D;
-}
+  }
 
 	bool Currency::checkProofOfWorkV1(Crypto::cn_context& context, const Block& block, difficulty_type currentDiffic,
 		Crypto::Hash& proofOfWork) const {
