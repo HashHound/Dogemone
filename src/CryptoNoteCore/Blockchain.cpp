@@ -1256,19 +1256,24 @@ bool Blockchain::getBlockLongHash(Crypto::cn_context& context, const Block& b, C
   }
 
   // Apply appropriate hashing based on block version
-  if (b.majorVersion <= CryptoNote::BLOCK_MAJOR_VERSION_4) {
-    // Use CryptoNight for versions 1-4
-    cn_slow_hash(context, pot.data(), pot.size(), res);
-  } else if (b.majorVersion >= CryptoNote::BLOCK_MAJOR_VERSION_5) {
-    // Use Yespower
-    Crypto::Hash hash_1, hash_2;
-    if (!Crypto::y_slow_hash(pot.data(), pot.size(), hash_1, hash_2)) {
-      return false;
-    }
-    res = hash_2;
-  }
-  return true;
-}
+   if (b.majorVersion <= CryptoNote::BLOCK_MAJOR_VERSION_4) {
+     // Use CryptoNight for versions 1-4
+     cn_slow_hash(context, pot.data(), pot.size(), res);
+   } else if (b.majorVersion == CryptoNote::BLOCK_MAJOR_VERSION_5 || b.majorVersion == CryptoNote::BLOCK_MAJOR_VERSION_6) {
+     // Use Signed Yespower for versions 5 and 6
+     Crypto::Hash hash_1, hash_2;
+     if (!Crypto::y_slow_hash(pot.data(), pot.size(), hash_1, hash_2)) {
+       return false;
+     }
+     res = hash_2;
+   } else if (b.majorVersion == CryptoNote::BLOCK_MAJOR_VERSION_7) {
+     // Use regular Yespower for block version 7 without seed
+     if (!Crypto::yespower_hash(pot.data(), pot.size(), res)) {
+       return false;
+     }
+   }
+   return true;
+ }
 
 bool Blockchain::complete_timestamps_vector(uint8_t blockMajorVersion, uint64_t start_top_height, std::vector<uint64_t>& timestamps) {
   if (timestamps.size() >= m_currency.timestampCheckWindow(blockMajorVersion))
