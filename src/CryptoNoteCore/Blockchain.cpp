@@ -1250,7 +1250,7 @@ bool Blockchain::getBlockLongHash(Crypto::cn_context& context, const Block& b, C
       return false;
   }
 
-  Crypto::Hash hash_1 = {0}, hash_2;
+  Crypto::Hash hash_1, hash_2;
   uint32_t currentHeight = boost::get<BaseInput>(b.baseTransaction.inputs[0]).blockIndex;
   uint32_t maxHeight = std::min<uint32_t>(getCurrentBlockchainHeight() - 1, currentHeight - 1 - static_cast<uint32_t>(m_currency.minedMoneyUnlockWindow()));
 
