@@ -82,7 +82,7 @@ namespace CryptoNote {
 			m_upgradeHeightV4 = 70;
 			m_upgradeHeightV5 = 90;
 			m_upgradeHeightV6 = 95;
-			m_upgradeHeightV7 = 200;
+			m_upgradeHeightV7 = 105;
 			m_blocksFileName = "testnet_" + m_blocksFileName;
 			m_blocksCacheFileName = "testnet_" + m_blocksCacheFileName;
 			m_blockIndexesFileName = "testnet_" + m_blockIndexesFileName;
@@ -792,13 +792,14 @@ bool Currency::getBlockReward(uint8_t blockMajorVersion, size_t medianSize, size
       else { i /= 10; }
     }
 
-    // minimum limit
-    if (!isTestnet() && next_D < 100000) {
-      next_D = 100000;
+		// Enforce minimum limit for testnet
+    uint64_t minimumDifficulty = 1000; // Set your desired minimum difficulty value
+    if (isTestnet() && next_D < minimumDifficulty) {
+        next_D = minimumDifficulty;
     }
 
     return next_D;
-  }
+}
 
 	bool Currency::checkProofOfWorkV1(Crypto::cn_context& context, const Block& block, difficulty_type currentDiffic,
 		Crypto::Hash& proofOfWork) const {
