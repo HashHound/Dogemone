@@ -321,7 +321,7 @@ bool check_outs_valid(const TransactionPrefix& tx, std::string* error) {
   std::unordered_set<PublicKey> keys_seen;
   for (const TransactionOutput& out : tx.outputs) {
     if (out.target.type() == typeid(KeyOutput)) {
-
+ 
       if (out.amount == 0) {
         if (error) {
           *error = "Zero amount ouput";
@@ -557,8 +557,6 @@ bool get_aux_block_header_hash(const Block& b, Hash& res) {
 
 bool get_block_longhash(cn_context &context, const Block& b, Hash& res) {
   BinaryArray bd;
-
-  // Determine the hashing blob based on the block version
   if (b.majorVersion == BLOCK_MAJOR_VERSION_1 || b.majorVersion >= BLOCK_MAJOR_VERSION_4) {
     if (!get_block_hashing_blob(b, bd)) {
       return false;
@@ -568,24 +566,16 @@ bool get_block_longhash(cn_context &context, const Block& b, Hash& res) {
       return false;
     }
   } else {
-    return false; // Unsupported version
+    return false;
   }
 
-  // Apply appropriate hashing based on block version
   if (b.majorVersion <= BLOCK_MAJOR_VERSION_4) {
-    // Use CryptoNight for versions 1-4
     cn_slow_hash(context, bd.data(), bd.size(), res);
-  } else if (b.majorVersion == BLOCK_MAJOR_VERSION_7) {
-    // Use Yespower (y_slow_hash) for block version 7 with regular blobs
-    Crypto::Hash hash_1, hash_2;
-    if (!Crypto::y_slow_hash(bd.data(), bd.size(), hash_1, hash_2)) {
-      return false;
-    }
-    res = hash_2;
-  } else {
-    return false; // Invalid version
   }
-
+  else {
+    return false;
+  }
+  
   return true;
 }
 
@@ -637,7 +627,7 @@ bool is_valid_decomposed_amount(uint64_t amount) {
 }
 
 bool getTransactionProof(const Crypto::Hash& transactionHash, const CryptoNote::AccountPublicAddress& destinationAddress, const Crypto::SecretKey& transactionKey, std::string& transactionProof, Logging::ILogger& log) {
-  LoggerRef logger(log, "get_tx_proof");
+  LoggerRef logger(log, "get_tx_proof"); 
   Crypto::KeyImage p = *reinterpret_cast<const Crypto::KeyImage*>(&destinationAddress.viewPublicKey);
   Crypto::KeyImage k = *reinterpret_cast<const Crypto::KeyImage*>(&transactionKey);
   Crypto::KeyImage pk = Crypto::scalarmultKey(p, k);
@@ -754,7 +744,7 @@ bool getReserveProof(const std::vector<TransactionOutputInformation>& selectedTr
 std::string signMessage(const std::string &data, const CryptoNote::AccountKeys &keys) {
   Crypto::Hash hash;
   Crypto::cn_fast_hash(data.data(), data.size(), hash);
-
+  
   Crypto::Signature signature;
   Crypto::generate_signature(hash, keys.address.spendPublicKey, keys.spendSecretKey, signature);
   return Tools::Base58::encode_addr(CryptoNote::parameters::CRYPTONOTE_KEYS_SIGNATURE_BASE58_PREFIX, std::string((const char *)&signature, sizeof(signature)));
