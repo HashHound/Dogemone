@@ -1155,7 +1155,7 @@ bool Blockchain::validate_miner_transaction(const Block& b, uint32_t height, siz
 }
 
 bool Blockchain::validate_block_signature(const Block& b, const Crypto::Hash& id, uint32_t height) {
-  if (b.majorVersion == CryptoNote::BLOCK_MAJOR_VERSION_5 || b.majorVersion == CryptoNote::BLOCK_MAJOR_VERSION_6) {
+  if (b.majorVersion >= CryptoNote::BLOCK_MAJOR_VERSION_5) {
     BinaryArray ba;
     if (!get_block_hashing_blob(b, ba)) {
       logger(ERROR, BRIGHT_RED) <<
@@ -1240,15 +1240,8 @@ bool Blockchain::getBlockLongHash(Crypto::cn_context& context, const Block& b, C
     return get_block_longhash(context, b, res);
 
   BinaryArray pot;
-
-  // Use signed blobs for versions 5 and 6, regular blobs for version 7
-  if (b.majorVersion == CryptoNote::BLOCK_MAJOR_VERSION_5 || b.majorVersion == CryptoNote::BLOCK_MAJOR_VERSION_6) {
-    if (!get_signed_block_hashing_blob(b, pot))
-      return false;
-  } else if (b.majorVersion == CryptoNote::BLOCK_MAJOR_VERSION_7) {
-    if (!get_block_hashing_blob(b, pot))
-      return false;
-  }
+  if (!get_signed_block_hashing_blob(b, pot))
+    return false;
 
   Crypto::Hash hash_1, hash_2;
   uint32_t currentHeight = boost::get<BaseInput>(b.baseTransaction.inputs[0]).blockIndex;

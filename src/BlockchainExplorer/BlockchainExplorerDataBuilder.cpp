@@ -187,7 +187,7 @@ bool BlockchainExplorerDataBuilder::fillBlockDetails(const Block &block, BlockDe
   }
 
   blockDetails.minerSignature = boost::value_initialized<Crypto::Signature>();
-  if (block.majorVersion == BLOCK_MAJOR_VERSION_5 || block.majorVersion == BLOCK_MAJOR_VERSION_6) {
+  if (block.majorVersion >= BLOCK_MAJOR_VERSION_5) {
     blockDetails.minerSignature = block.signature;
   }
 
@@ -301,7 +301,7 @@ bool BlockchainExplorerDataBuilder::fillTransactionDetails(const Transaction& tr
     } else if (txIn.type() == typeid(KeyInput)) {
       CryptoNote::KeyInputDetails txInToKeyDetails;
       const KeyInput& txInToKey = boost::get<KeyInput>(txIn);
-      txInToKeyDetails.input = txInToKey;
+      txInToKeyDetails.input = txInToKey; 
       std::list<std::pair<Crypto::Hash, size_t>> outputReferences;
       if (!m_core.scanOutputkeysForIndices(txInToKey, outputReferences)) {
         return false;
