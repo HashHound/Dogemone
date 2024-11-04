@@ -1211,39 +1211,46 @@ bool Blockchain::getHashingBlob(const uint32_t height, BinaryArray& blob) {
 }
 
 bool Blockchain::checkProofOfWork(Crypto::cn_context& context, const Block& block, difficulty_type currentDiffic, Crypto::Hash& proofOfWork) {
-  std::list<Crypto::Hash> dummy_alt_chain;
-
-  return checkProofOfWork(context, block, currentDiffic, proofOfWork, dummy_alt_chain, m_no_blobs);
+    std::list<Crypto::Hash> dummy_alt_chain;
+    return checkProofOfWork(context, block, currentDiffic, proofOfWork, dummy_alt_chain, m_no_blobs);
 }
 
 bool Blockchain::checkProofOfWork(Crypto::cn_context& context, const Block& block, difficulty_type currentDiffic, Crypto::Hash& proofOfWork, const std::list<Crypto::Hash>& alt_chain, bool no_blobs) {
-  if (block.majorVersion < CryptoNote::BLOCK_MAJOR_VERSION_5)
-    return m_currency.checkProofOfWork(context, block, currentDiffic, proofOfWork);
+    if (block.majorVersion < CryptoNote::BLOCK_MAJOR_VERSION_5) {
+        return m_currency.checkProofOfWork(context, block, currentDiffic, proofOfWork);
+    } else if (block.majorVersion >= CryptoNote::BLOCK_MAJOR_VERSION_7) {
+        // Use the same logic for block versions 5 and above, including version 7
+        if (!getBlockLongHash(context, block, proofOfWork, alt_chain, no_blobs))
+            return false;
 
-  if (!getBlockLongHash(context, block, proofOfWork, alt_chain, no_blobs))
-    return false;
+        if (!check_hash(proofOfWork, currentDiffic))
+            return false;
 
-  if (!check_hash(proofOfWork, currentDiffic))
-    return false;
+        return true;
+    } else {
+        // For block versions 5 and 6
+        if (!getBlockLongHash(context, block, proofOfWork, alt_chain, no_blobs))
+            return false;
 
-  return true;
+        if (!check_hash(proofOfWork, currentDiffic))
+            return false;
+
+        return true;
+    }
 }
 
 bool Blockchain::getBlockLongHash(Crypto::cn_context& context, const Block& b, Crypto::Hash& res) {
   std::list<Crypto::Hash> dummy_alt_chain;
-
   return getBlockLongHash(context, b, res, dummy_alt_chain, false);
 }
 
 bool Blockchain::getBlockLongHash(Crypto::cn_context& context, const Block& b, Crypto::Hash& res, const std::list<Crypto::Hash>& alt_chain, bool no_blobs) {
   BinaryArray pot;
 
+  if (b.majorVersion < CryptoNote::BLOCK_MAJOR_VERSION_5)
+    return get_block_longhash(context, b, res);
   // Determine the hashing blob based on the block version
-  if (b.majorVersion <= CryptoNote::BLOCK_MAJOR_VERSION_4) {
-    if (!get_block_hashing_blob(b, pot)) {
-      return false;
-    }
-  } else if (b.majorVersion == CryptoNote::BLOCK_MAJOR_VERSION_5 || b.majorVersion == CryptoNote::BLOCK_MAJOR_VERSION_6) {
+  if (b.majorVersion >= CryptoNote::BLOCK_MAJOR_VERSION_5 && b.majorVersion <= CryptoNote::BLOCK_MAJOR_VERSION_6) {
     if (!get_signed_block_hashing_blob(b, pot)) {
       return false;
     }
@@ -1255,25 +1262,71 @@ bool Blockchain::getBlockLongHash(Crypto::cn_context& context, const Block& b, C
     return false; // Unsupported block version
   }
 
-  // Apply appropriate hashing based on block version
-   if (b.majorVersion <= CryptoNote::BLOCK_MAJOR_VERSION_4) {
-     // Use CryptoNight for versions 1-4
-     cn_slow_hash(context, pot.data(), pot.size(), res);
-   } else if (b.majorVersion == CryptoNote::BLOCK_MAJOR_VERSION_5 || b.majorVersion == CryptoNote::BLOCK_MAJOR_VERSION_6) {
-     // Use Signed Yespower for versions 5 and 6
-     Crypto::Hash hash_1, hash_2;
-     if (!Crypto::y_slow_hash(pot.data(), pot.size(), hash_1, hash_2)) {
-       return false;
-     }
-     res = hash_2;
-   } else if (b.majorVersion == CryptoNote::BLOCK_MAJOR_VERSION_7) {
-     // Use regular Yespower for block version 7 without seed
-     if (!Crypto::yespower_hash(pot.data(), pot.size(), res)) {
-       return false;
-     }
-   }
-   return true;
- }
+  // Apply the hashing logic based on block version
+  if (b.majorVersion >= CryptoNote::BLOCK_MAJOR_VERSION_5 && b.majorVersion <= CryptoNote::BLOCK_MAJOR_VERSION_6) {
+    // Use Signed Yespower for versions 5 and 6, include complex hashing process
+    Crypto::Hash hash_1, hash_2;
+    uint32_t currentHeight = boost::get<BaseInput>(b.baseTransaction.inputs[0]).blockIndex;
+    uint32_t maxHeight = std::min<uint32_t>(getCurrentBlockchainHeight() - 1, currentHeight - 1 - static_cast<uint32_t>(m_currency.minedMoneyUnlockWindow()));
+
+    #define ITER 128
+    for (uint32_t i = 0; i < ITER; i++) {
+      cn_fast_hash(pot.data(), pot.size(), hash_1);
+
+      for (uint8_t j = 1; j <= 8; j++) {
+        uint8_t chunk[4] = {
+          hash_1.data[j * 4 - 4],
+          hash_1.data[j * 4 - 3],
+          hash_1.data[j * 4 - 2],
+          hash_1.data[j * 4 - 1]
+        };
+
+        uint32_t n = (chunk[0] << 24) |
+                     (chunk[1] << 16) |
+                     (chunk[2] << 8)  |
+                     (chunk[3]);
+
+        uint32_t height_j = n % maxHeight;
+        bool found_alt = false;
+        for (const auto& ch_ent : alt_chain) {
+          const Block& alt_block = m_alternative_chains[ch_ent].bl;
+          uint32_t alt_height = boost::get<BaseInput>(alt_block.baseTransaction.inputs[0]).blockIndex;
+          if (alt_height == height_j) {
+            BinaryArray ba;
+            if (!get_block_hashing_blob(alt_block, ba)) return false;
+            pot.insert(std::end(pot), std::begin(ba), std::end(ba));
+            found_alt = true;
+          }
+        }
+        if (!found_alt) {
+          if (no_blobs || m_allowDeepReorg) {
+            std::lock_guard<decltype(m_blockchain_lock)> lk(m_blockchain_lock);
+            const Block& chain_block = m_blocks[height_j].bl;
+            BinaryArray ba;
+            if (!get_block_hashing_blob(chain_block, ba)) return false;
+            pot.insert(std::end(pot), std::begin(ba), std::end(ba));
+          } else {
+            BinaryArray& ba = m_blobs[height_j];
+            pot.insert(std::end(pot), std::begin(ba), std::end(ba));
+          }
+        }
+      }
+    }
+
+    if (!Crypto::y_slow_hash(pot.data(), pot.size(), hash_1, hash_2)) {
+      return false;
+    }
+    res = hash_2;
+  } else if (b.majorVersion == CryptoNote::BLOCK_MAJOR_VERSION_7) {
+    // Use regular Yespower for block version 7 without seed
+    if (!Crypto::yespower_hash(pot.data(), pot.size(), res)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 
 bool Blockchain::complete_timestamps_vector(uint8_t blockMajorVersion, uint64_t start_top_height, std::vector<uint64_t>& timestamps) {
   if (timestamps.size() >= m_currency.timestampCheckWindow(blockMajorVersion))

@@ -557,8 +557,6 @@ bool get_aux_block_header_hash(const Block& b, Hash& res) {
 
 bool get_block_longhash(cn_context &context, const Block& b, Hash& res) {
   BinaryArray bd;
-
-  // Determine the hashing blob based on the block version
   if (b.majorVersion == BLOCK_MAJOR_VERSION_1 || b.majorVersion >= BLOCK_MAJOR_VERSION_4) {
     if (!get_block_hashing_blob(b, bd)) {
       return false;
@@ -568,27 +566,14 @@ bool get_block_longhash(cn_context &context, const Block& b, Hash& res) {
       return false;
     }
   } else {
-    return false; // Unsupported version
+    return false;
   }
 
-  // Apply appropriate hashing based on block version
   if (b.majorVersion <= BLOCK_MAJOR_VERSION_4) {
-    // Use CryptoNight for versions 1-4
     cn_slow_hash(context, bd.data(), bd.size(), res);
-  } else if (b.majorVersion == BLOCK_MAJOR_VERSION_5 || b.majorVersion == BLOCK_MAJOR_VERSION_6) {
-    // Use Signed Yespower for versions 5 and 6
-    Crypto::Hash hash_1, hash_2;
-    if (!Crypto::y_slow_hash(bd.data(), bd.size(), hash_1, hash_2)) {
-      return false;
-    }
-    res = hash_2;
-  } else if (b.majorVersion == BLOCK_MAJOR_VERSION_7) {
-    // Use regular Yespower for block version 7
-    if (!Crypto::yespower_hash(bd.data(), bd.size(), res)) {
-      return false;
-    }
-  } else {
-    return false; // Invalid version
+  }
+  else {
+    return false;
   }
 
   return true;
