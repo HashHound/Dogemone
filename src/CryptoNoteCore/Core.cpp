@@ -131,7 +131,7 @@ bool Core::get_blocks(uint32_t start_offset, uint32_t count, std::list<Block>& b
 
 bool Core::get_blocks(uint32_t start_offset, uint32_t count, std::list<Block>& blocks) {
   return m_blockchain.getBlocks(start_offset, count, blocks);
-}  
+}
 void Core::getTransactions(const std::vector<Crypto::Hash>& txs_ids, std::list<Transaction>& txs, std::list<Crypto::Hash>& missed_txs, bool checkTxPool) {
   m_blockchain.getTransactions(txs_ids, txs, missed_txs, checkTxPool);
 }
@@ -333,7 +333,7 @@ bool Core::check_tx_fee(const Transaction& tx, const Crypto::Hash& txHash, size_
       enough = false;
     }
     else if (height > CryptoNote::parameters::UPGRADE_HEIGHT_V4 && height < CryptoNote::parameters::UPGRADE_HEIGHT_V4_3) {
-      if (fee < (min - (min * 20 / 100))) {      
+      if (fee < (min - (min * 20 / 100))) {
         enough = false;
       }
       else {
@@ -367,8 +367,8 @@ bool Core::check_tx_fee(const Transaction& tx, const Crypto::Hash& txHash, size_
     if (!enough) {
       tvc.m_verification_failed = true;
       tvc.m_tx_fee_too_small = true;
-      logger(DEBUGGING) << "The fee for transaction " 
-                        << Common::podToHex(txHash) 
+      logger(DEBUGGING) << "The fee for transaction "
+                        << Common::podToHex(txHash)
                         << " is insufficient and it is not a fusion transaction";
       return false;
     }
@@ -401,7 +401,7 @@ bool Core::check_tx_semantic(const Transaction& tx, const Crypto::Hash& txHash, 
   for (size_t i = 0; i < tx.inputs.size(); ++i) {
     if (tx.inputs[i].type() == typeid(KeyInput)) {
       if (boost::get<KeyInput>(tx.inputs[i]).outputIndexes.size() != tx.signatures[i].size()) {
-        logger(ERROR) << "tx signatures count doesn't match outputIndexes count for input " 
+        logger(ERROR) << "tx signatures count doesn't match outputIndexes count for input "
           << i << ", rejected for tx id= " << Common::podToHex(txHash);
         return false;
       }
@@ -484,7 +484,7 @@ size_t Core::getBlockchainTotalTransactions() {
 //}
 
 bool Core::add_new_tx(const Transaction& tx, const Crypto::Hash& tx_hash, size_t blob_size, tx_verification_context& tvc, bool keeped_by_block) {
-  //Locking on m_mempool and m_blockchain closes possibility to add tx to memory pool which is already in blockchain 
+  //Locking on m_mempool and m_blockchain closes possibility to add tx to memory pool which is already in blockchain
   std::lock_guard<decltype(m_mempool)> lk(m_mempool);
   LockedBlockchainStorage lbs(m_blockchain);
 
@@ -540,7 +540,12 @@ bool Core::get_block_template(Block& b, const AccountKeys& acc, difficulty_type&
       b.minorVersion = m_currency.upgradeHeight(BLOCK_MAJOR_VERSION_4) == UpgradeDetectorBase::UNDEF_HEIGHT ? BLOCK_MINOR_VERSION_1 : BLOCK_MINOR_VERSION_0;
     } else if (b.majorVersion >= BLOCK_MAJOR_VERSION_5) {
       b.minorVersion = m_currency.upgradeHeight(BLOCK_MAJOR_VERSION_5) == UpgradeDetectorBase::UNDEF_HEIGHT ? BLOCK_MINOR_VERSION_1 : BLOCK_MINOR_VERSION_0;
+    } else if (b.majorVersion == BLOCK_MAJOR_VERSION_6) {
+    b.minorVersion = m_currency.upgradeHeight(BLOCK_MAJOR_VERSION_6) == UpgradeDetectorBase::UNDEF_HEIGHT ? BLOCK_MINOR_VERSION_1 : BLOCK_MINOR_VERSION_0;
+    } else if (b.majorVersion == BLOCK_MAJOR_VERSION_7) {
+    b.minorVersion = m_currency.upgradeHeight(BLOCK_MAJOR_VERSION_7) == UpgradeDetectorBase::UNDEF_HEIGHT ? BLOCK_MINOR_VERSION_1 : BLOCK_MINOR_VERSION_0;
     }
+
 
     // Don't generate a block template with invalid timestamp
     // Fix by Jagerman
@@ -575,9 +580,9 @@ bool Core::get_block_template(Block& b, const AccountKeys& acc, difficulty_type&
      */
   //make blocks coin-base tx looks close to real coinbase tx to get truthful blob size
   bool r = m_currency.constructMinerTx(b.majorVersion, height, median_size, already_generated_coins, txs_size, fee, acc.address, b.baseTransaction, tx_key, ex_nonce, b.majorVersion >= BLOCK_MAJOR_VERSION_5 ? 1 : 14);
-  if (!r) { 
-    logger(ERROR, BRIGHT_RED) << "Failed to construct miner tx, first chance"; 
-    return false; 
+  if (!r) {
+    logger(ERROR, BRIGHT_RED) << "Failed to construct miner tx, first chance";
+    return false;
   }
 
   size_t cumulative_size = txs_size + getObjectBinarySize(b.baseTransaction);
@@ -1083,9 +1088,9 @@ bool Core::scanOutputkeysForIndices(const KeyInput& txInToKey, std::list<std::pa
       return true;
     }
   };
-    
+
   outputs_visitor vi(outputReferences);
-    
+
   return m_blockchain.scanOutputKeysForIndexes(txInToKey, vi);
 }
 
@@ -1260,7 +1265,7 @@ bool Core::handleIncomingTransaction(const Transaction& tx, const Crypto::Hash& 
       tvc.m_verification_failed = true;
       return false;
     }
-  
+
     if (!check_tx_fee(tx, txHash, blobSize, tvc, height)) {
       tvc.m_verification_failed = true;
       return false;

@@ -495,23 +495,22 @@ bool Currency::getBlockReward(uint8_t blockMajorVersion, size_t medianSize, size
   }
 
 	difficulty_type Currency::nextDifficulty(uint32_t height, uint8_t blockMajorVersion, std::vector<uint64_t> timestamps,
-		std::vector<difficulty_type> cumulativeDifficulties) const {
-		if (blockMajorVersion >= BLOCK_MAJOR_VERSION_5) {
-			return nextDifficultyV5(height, blockMajorVersion, timestamps, cumulativeDifficulties);
-		}
-		else if (blockMajorVersion == BLOCK_MAJOR_VERSION_4) {
-			return nextDifficultyV4(height, blockMajorVersion, timestamps, cumulativeDifficulties);
-		}
-		else if (blockMajorVersion == BLOCK_MAJOR_VERSION_3) {
-			return nextDifficultyV3(timestamps, cumulativeDifficulties);
-		}
-		else if (blockMajorVersion == BLOCK_MAJOR_VERSION_2) {
-			return nextDifficultyV2(timestamps, cumulativeDifficulties);
-		}
-		else {
-			return nextDifficultyV1(timestamps, cumulativeDifficulties);
-		}
+	    std::vector<difficulty_type> cumulativeDifficulties) const {
+	    if (blockMajorVersion >= BLOCK_MAJOR_VERSION_7) {
+	        return nextDifficultyV7(height, blockMajorVersion, timestamps, cumulativeDifficulties);
+	    } else if (blockMajorVersion == BLOCK_MAJOR_VERSION_5 || blockMajorVersion == BLOCK_MAJOR_VERSION_6) {
+	        return nextDifficultyV5(height, blockMajorVersion, timestamps, cumulativeDifficulties);
+	    } else if (blockMajorVersion == BLOCK_MAJOR_VERSION_4) {
+	        return nextDifficultyV4(height, blockMajorVersion, timestamps, cumulativeDifficulties);
+	    } else if (blockMajorVersion == BLOCK_MAJOR_VERSION_3) {
+	        return nextDifficultyV3(timestamps, cumulativeDifficulties);
+	    } else if (blockMajorVersion == BLOCK_MAJOR_VERSION_2) {
+	        return nextDifficultyV2(timestamps, cumulativeDifficulties);
+	    } else {
+	        return nextDifficultyV1(timestamps, cumulativeDifficulties);
+	    }
 	}
+
 
 	difficulty_type Currency::nextDifficultyV1(std::vector<uint64_t> timestamps,
 				std::vector<difficulty_type> cumulativeDifficulties) const {
@@ -793,12 +792,76 @@ bool Currency::getBlockReward(uint8_t blockMajorVersion, size_t medianSize, size
     }
 
     // minimum limit
-    if (!isTestnet() && next_D < 100000) {
-      next_D = 100000;
-    }
+		uint64_t minimumDifficulty = 1000; // Set your desired minimum difficulty value
+
+		if (isTestnet() && next_D < minimumDifficulty) {
+    next_D = minimumDifficulty;
+		}
+
 
     return next_D;
   }
+
+	difficulty_type Currency::nextDifficultyV7(uint32_t height, uint8_t blockMajorVersion,
+	    std::vector<std::uint64_t> timestamps, std::vector<difficulty_type> cumulativeDifficulties) const {
+
+	    // Ensure the vectors are correctly sized
+	    assert(timestamps.size() > 1 && cumulativeDifficulties.size() > 1);
+	    size_t N = std::min<size_t>(timestamps.size() - 1, difficultyBlocksCount()); // Number of blocks to use
+	    const int64_t T = static_cast<int64_t>(m_difficultyTarget); // Target block time
+
+	    // Check and reset difficulty if transitioning to block version 7
+	    if (height == upgradeHeight(CryptoNote::BLOCK_MAJOR_VERSION_7)) {
+	        return cumulativeDifficulties[0] / (height ? height : 1) / RESET_WORK_FACTOR_V5;
+	    }
+
+	    // Adjust block height and handle new epoch conditions
+	    height--; // Align with top block index logic
+	    uint32_t count = (uint32_t)difficultyBlocksCountByBlockVersion(blockMajorVersion) - 1;
+	    if (height > upgradeHeight(CryptoNote::BLOCK_MAJOR_VERSION_7) && height < CryptoNote::parameters::UPGRADE_HEIGHT_V7 + count) {
+	        uint32_t offset = count - (height - upgradeHeight(CryptoNote::BLOCK_MAJOR_VERSION_7));
+	        timestamps.erase(timestamps.begin(), timestamps.begin() + offset);
+	        cumulativeDifficulties.erase(cumulativeDifficulties.begin(), cumulativeDifficulties.begin() + offset);
+	    }
+
+	    // LWMA-4 calculation
+	    int64_t L(0), ST, sum_3_ST(0);
+	    uint64_t next_D, prev_D;
+
+	    assert(timestamps.size() == cumulativeDifficulties.size());
+
+	    for (size_t i = 1; i <= N; i++) {
+	        ST = std::max<int64_t>(timestamps[i] - timestamps[i - 1], 1); // Prevent negative or zero solvetime
+	        L += ST * i;
+	        if (i > N - 3) {
+	            sum_3_ST += ST;
+	        }
+	    }
+
+	    next_D = (cumulativeDifficulties[N] - cumulativeDifficulties[0]) * T * (N + 1) / (2 * L);
+	    next_D = (next_D * 99) / 100; // Apply a slight dampening factor
+
+	    prev_D = cumulativeDifficulties[N] - cumulativeDifficulties[N - 1];
+	    next_D = std::clamp((uint64_t)(prev_D * 67 / 100), next_D, (uint64_t)(prev_D * 150 / 100)); // Cap increase
+
+	    if (sum_3_ST < (8 * T) / 10) {
+	        next_D = (prev_D * 110) / 100;
+	    }
+
+	    // Minimum limit for mainnet
+	    if (!isTestnet() && next_D < 10000) {
+	        next_D = 10000;
+	    }
+
+	    // Minimum limit for testnet
+	    uint64_t minimumDifficulty = 1000; // Set your desired minimum difficulty value
+	    if (isTestnet() && next_D < minimumDifficulty) {
+	        next_D = minimumDifficulty;
+	    }
+
+	    return next_D;
+	}
+
 
 	bool Currency::checkProofOfWorkV1(Crypto::cn_context& context, const Block& block, difficulty_type currentDiffic,
 		Crypto::Hash& proofOfWork) const {
