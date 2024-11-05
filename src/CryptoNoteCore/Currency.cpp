@@ -803,77 +803,43 @@ bool Currency::getBlockReward(uint8_t blockMajorVersion, size_t medianSize, size
   }
 
 	difficulty_type Currency::nextDifficultyV7(uint32_t height, uint8_t blockMajorVersion,
-	    std::vector<std::uint64_t> timestamps, std::vector<difficulty_type> cumulativeDifficulties) const {
-
-	    // Ensure the vectors are correctly sized
-	    assert(timestamps.size() > 1 && cumulativeDifficulties.size() > 1);
-	    size_t N = std::min<size_t>(timestamps.size() - 1, difficultyBlocksCount()); // Number of blocks to use
+	                                           std::vector<uint64_t> timestamps,
+	                                           std::vector<difficulty_type> cumulativeDifficulties) const {
+	    // Constants for LWMA-2
 	    const int64_t T = static_cast<int64_t>(m_difficultyTarget); // Target block time
+	    size_t N = CryptoNote::parameters::DIFFICULTY_WINDOW_V4;    // Set window size for version 7
 
-	    // Check and reset difficulty if transitioning to block version 7
-	    if (height == upgradeHeight(CryptoNote::BLOCK_MAJOR_VERSION_7)) {
-	        return cumulativeDifficulties[0] / (height ? height : 1) / RESET_WORK_FACTOR_V5;
+	    // Check the size of input vectors
+	    assert(timestamps.size() > 1 && cumulativeDifficulties.size() > 1);
+	    if (timestamps.size() < N + 1) {
+	        N = timestamps.size() - 1;
+	    } else if (timestamps.size() > N + 1) {
+	        timestamps.erase(timestamps.begin(), timestamps.end() - N - 1);
+	        cumulativeDifficulties.erase(cumulativeDifficulties.begin(), cumulativeDifficulties.end() - N - 1);
 	    }
 
-	    // Adjust block height and handle new epoch conditions
-	    height--; // Align with top block index logic
-	    uint32_t count = (uint32_t)difficultyBlocksCountByBlockVersion(blockMajorVersion) - 1;
-	    if (height > upgradeHeight(CryptoNote::BLOCK_MAJOR_VERSION_7) && height < CryptoNote::parameters::UPGRADE_HEIGHT_V7 + count) {
-	        uint32_t offset = count - (height - upgradeHeight(CryptoNote::BLOCK_MAJOR_VERSION_7));
-	        timestamps.erase(timestamps.begin(), timestamps.begin() + offset);
-	        cumulativeDifficulties.erase(cumulativeDifficulties.begin(), cumulativeDifficulties.begin() + offset);
-	    }
-
-	    // LWMA-3 calculation
-	    int64_t L(0), ST, sum_3_ST(0);
-	    uint64_t next_D, prev_D;
-
-	    assert(timestamps.size() == cumulativeDifficulties.size());
-
-	    int64_t prev_max_TS = timestamps[0]; // Initialize previous max timestamp
+	    // LWMA variables
+	    int64_t L = 0, ST, previousTimestamp = timestamps[0];
+	    double sumInverseD = 0.0;
 
 	    for (size_t i = 1; i <= N; i++) {
-	        // Clamping ST to prevent abnormal values, suitable for LWMA-3
-	        if (timestamps[i] > prev_max_TS) {
-	            ST = timestamps[i] - prev_max_TS;
-	        } else {
-	            ST = 1; // Enforce minimum solvetime of 1 if out of order
-	        }
-	        ST = std::min(ST, 6 * T); // Cap ST to prevent excessive difficulty adjustments
-	        prev_max_TS = timestamps[i];
+	        int64_t solveTime = timestamps[i] - previousTimestamp;
+	        solveTime = std::clamp(solveTime, (-6 * T), (6 * T)); // Limit solveTime to a range
+	        previousTimestamp = timestamps[i];
 
-	        L += ST * i;
-
-	        // Sum last 3 solvetime values
-	        if (i > N - 3) {
-	            sum_3_ST += ST;
-	        }
+	        L += solveTime * i; // Weighted solve time
+	        sumInverseD += 1.0 / static_cast<double>(cumulativeDifficulties[i] - cumulativeDifficulties[i - 1]);
 	    }
 
-	    // Calculate next difficulty
-	    next_D = (cumulativeDifficulties[N] - cumulativeDifficulties[0]) * T * (N + 1) / (2 * L);
-	    next_D = (next_D * 99) / 100; // Slight dampening factor
+	    // Calculate harmonic mean difficulty and next difficulty
+	    double harmonicMeanD = N / sumInverseD;
+	    double nextDifficulty = harmonicMeanD * T / (L / (N * (N + 1) / 2.0));
 
-	    prev_D = cumulativeDifficulties[N] - cumulativeDifficulties[N - 1];
-	    next_D = std::clamp((uint64_t)(prev_D * 67 / 100), next_D, (uint64_t)(prev_D * 150 / 100)); // Cap increase
-
-	    if (sum_3_ST < (8 * T) / 10) {
-	        next_D = (prev_D * 110) / 100;
-	    }
-
-	    // Minimum limit for mainnet
-	    if (!isTestnet() && next_D < 10000) {
-	        next_D = 10000;
-	    }
-
-	    // Minimum limit for testnet
-	    uint64_t minimumDifficulty = 1000; // Set your desired minimum difficulty value
-	    if (isTestnet() && next_D < minimumDifficulty) {
-	        next_D = minimumDifficulty;
-	    }
-
-	    return next_D;
+	    // Apply limits for mainnet and testnet
+	    uint64_t minDifficulty = isTestnet() ? 1000 : 100000;
+	    return static_cast<difficulty_type>(std::max(nextDifficulty, static_cast<double>(minDifficulty)));
 	}
+
 
 
 	bool Currency::checkProofOfWorkV1(Crypto::cn_context& context, const Block& block, difficulty_type currentDiffic,
