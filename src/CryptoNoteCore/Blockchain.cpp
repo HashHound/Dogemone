@@ -1155,7 +1155,7 @@ bool Blockchain::validate_miner_transaction(const Block& b, uint32_t height, siz
 }
 
 bool Blockchain::validate_block_signature(const Block& b, const Crypto::Hash& id, uint32_t height) {
-  if (b.majorVersion == CryptoNote::BLOCK_MAJOR_VERSION_5 || b.majorVersion == CryptoNote::BLOCK_MAJOR_VERSION_6) {
+  if (b.majorVersion >= CryptoNote::BLOCK_MAJOR_VERSION_5) {
     BinaryArray ba;
     if (!get_block_hashing_blob(b, ba)) {
       logger(ERROR, BRIGHT_RED) <<
@@ -1245,7 +1245,8 @@ bool Blockchain::getBlockLongHash(Crypto::cn_context& context, const Block& b, C
 }
 
 bool Blockchain::getBlockLongHash(Crypto::cn_context& context, const Block& b, Crypto::Hash& res, const std::list<Crypto::Hash>& alt_chain, bool no_blobs) {
-  BinaryArray pot;
+  if (b.majorVersion < CryptoNote::BLOCK_MAJOR_VERSION_5)
+    return get_block_longhash(context, b, res);
 
   if (b.majorVersion < CryptoNote::BLOCK_MAJOR_VERSION_5)
     return get_block_longhash(context, b, res);
