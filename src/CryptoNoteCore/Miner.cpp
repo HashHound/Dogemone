@@ -125,7 +125,7 @@ namespace CryptoNote
   bool miner::on_idle()
   {
     m_update_block_template_interval.call([&](){
-      if(is_mining()) 
+      if(is_mining())
         request_block_template();
       return true;
     });
@@ -134,7 +134,7 @@ namespace CryptoNote
       merge_hr(false);
       return true;
     });
-    
+
     m_update_log_hr_interval.call([&](){
       merge_hr(true);
       return true;
@@ -181,8 +181,8 @@ namespace CryptoNote
     if (!config.extraMessages.empty()) {
       std::string buff;
       if (!Common::loadFileToString(config.extraMessages, buff)) {
-        logger(ERROR, BRIGHT_RED) << "Failed to load file with extra messages: " << config.extraMessages; 
-        return false; 
+        logger(ERROR, BRIGHT_RED) << "Failed to load file with extra messages: " << config.extraMessages;
+        return false;
       }
       std::vector<std::string> extra_vec;
       boost::split(extra_vec, buff, boost::is_any_of("\n"), boost::token_compress_on );
@@ -243,7 +243,7 @@ namespace CryptoNote
   }
   //-----------------------------------------------------------------------------------------------------
   bool miner::start(const AccountKeys& acc, size_t threads_count)
-  {   
+  {
     if (is_mining()) {
       logger(ERROR) << "Starting miner but it's already started";
       return false;
@@ -274,7 +274,7 @@ namespace CryptoNote
     logger(INFO) << "Mining has started with " << threads_count << " threads, good luck!";
     return true;
   }
-  
+
   //-----------------------------------------------------------------------------------------------------
   uint64_t miner::get_speed()
   {
@@ -283,9 +283,9 @@ namespace CryptoNote
     else
       return 0;
   }
-  
+
   //-----------------------------------------------------------------------------------------------------
-  void miner::send_stop_signal() 
+  void miner::send_stop_signal()
   {
     m_stop = true;
   }
@@ -437,32 +437,32 @@ namespace CryptoNote
 
       b.nonce = nonce;
 
-      // step 1: sing the block
-      if (b.majorVersion >= CryptoNote::BLOCK_MAJOR_VERSION_5) {
-        BinaryArray ba;
-        if (!get_block_hashing_blob(b, ba)) {
-          logger(ERROR) << "get_block_hashing_blob for signature failed.";
-          m_stop = true;
-        }
-        Crypto::Hash h = Crypto::cn_fast_hash(ba.data(), ba.size());
-        try {
-          Crypto::PublicKey txPublicKey = getTransactionPublicKeyFromExtra(b.baseTransaction.extra);
-          Crypto::KeyDerivation derivation;
-          if (!Crypto::generate_key_derivation(txPublicKey, m_mine_account.viewSecretKey, derivation)) {
-            logger(WARNING) << "failed to generate_key_derivation for block signature";
+      // Step 1: Sign the block
+if (b.majorVersion == CryptoNote::BLOCK_MAJOR_VERSION_5 || b.majorVersion == CryptoNote::BLOCK_MAJOR_VERSION_6) {
+    BinaryArray ba;
+    if (!get_block_hashing_blob(b, ba)) {
+        logger(ERROR) << "get_block_hashing_blob for signature failed.";
+        m_stop = true;
+    }
+    Crypto::Hash h = Crypto::cn_fast_hash(ba.data(), ba.size());
+    try {
+        Crypto::PublicKey txPublicKey = getTransactionPublicKeyFromExtra(b.baseTransaction.extra);
+        Crypto::KeyDerivation derivation;
+        if (!Crypto::generate_key_derivation(txPublicKey, m_mine_account.viewSecretKey, derivation)) {
+            logger(WARNING) << "Failed to generate_key_derivation for block signature";
             m_stop = true;
-          }
-          Crypto::SecretKey ephSecKey;
-          Crypto::derive_secret_key(derivation, 0, m_mine_account.spendSecretKey, ephSecKey);
-          Crypto::PublicKey ephPubKey = boost::get<KeyOutput>(b.baseTransaction.outputs[0].target).key;
+        }
+        Crypto::SecretKey ephSecKey;
+        Crypto::derive_secret_key(derivation, 0, m_mine_account.spendSecretKey, ephSecKey);
+        Crypto::PublicKey ephPubKey = boost::get<KeyOutput>(b.baseTransaction.outputs[0].target).key;
+        Crypto::generate_signature(h, ephPubKey, ephSecKey, b.signature);
+    }
+    catch (std::exception& e) {
+        logger(WARNING) << "Signing block failed: " << e.what();
+        m_stop = true;
+    }
+}
 
-          Crypto::generate_signature(h, ephPubKey, ephSecKey, b.signature);
-        }
-        catch (std::exception& e) {
-          logger(WARNING) << "Signing block failed: " << e.what();
-          m_stop = true;
-        }
-      }
 
       // step 2: get long hash
       Crypto::Hash pow;

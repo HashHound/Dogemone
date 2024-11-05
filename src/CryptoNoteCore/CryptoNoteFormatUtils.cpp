@@ -321,7 +321,7 @@ bool check_outs_valid(const TransactionPrefix& tx, std::string* error) {
   std::unordered_set<PublicKey> keys_seen;
   for (const TransactionOutput& out : tx.outputs) {
     if (out.target.type() == typeid(KeyOutput)) {
- 
+
       if (out.amount == 0) {
         if (error) {
           *error = "Zero amount ouput";
@@ -575,7 +575,7 @@ bool get_block_longhash(cn_context &context, const Block& b, Hash& res) {
   else {
     return false;
   }
-  
+
   return true;
 }
 
@@ -627,7 +627,7 @@ bool is_valid_decomposed_amount(uint64_t amount) {
 }
 
 bool getTransactionProof(const Crypto::Hash& transactionHash, const CryptoNote::AccountPublicAddress& destinationAddress, const Crypto::SecretKey& transactionKey, std::string& transactionProof, Logging::ILogger& log) {
-  LoggerRef logger(log, "get_tx_proof"); 
+  LoggerRef logger(log, "get_tx_proof");
   Crypto::KeyImage p = *reinterpret_cast<const Crypto::KeyImage*>(&destinationAddress.viewPublicKey);
   Crypto::KeyImage k = *reinterpret_cast<const Crypto::KeyImage*>(&transactionKey);
   Crypto::KeyImage pk = Crypto::scalarmultKey(p, k);
@@ -744,7 +744,7 @@ bool getReserveProof(const std::vector<TransactionOutputInformation>& selectedTr
 std::string signMessage(const std::string &data, const CryptoNote::AccountKeys &keys) {
   Crypto::Hash hash;
   Crypto::cn_fast_hash(data.data(), data.size(), hash);
-  
+
   Crypto::Signature signature;
   Crypto::generate_signature(hash, keys.address.spendPublicKey, keys.spendSecretKey, signature);
   return Tools::Base58::encode_addr(CryptoNote::parameters::CRYPTONOTE_KEYS_SIGNATURE_BASE58_PREFIX, std::string((const char *)&signature, sizeof(signature)));
