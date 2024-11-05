@@ -824,22 +824,35 @@ bool Currency::getBlockReward(uint8_t blockMajorVersion, size_t medianSize, size
 	        cumulativeDifficulties.erase(cumulativeDifficulties.begin(), cumulativeDifficulties.begin() + offset);
 	    }
 
-	    // LWMA-4 calculation
+	    // LWMA-3 calculation
 	    int64_t L(0), ST, sum_3_ST(0);
 	    uint64_t next_D, prev_D;
 
 	    assert(timestamps.size() == cumulativeDifficulties.size());
 
+	    int64_t prev_max_TS = timestamps[0]; // Initialize previous max timestamp
+
 	    for (size_t i = 1; i <= N; i++) {
-	        ST = std::max<int64_t>(timestamps[i] - timestamps[i - 1], 1); // Prevent negative or zero solvetime
+	        // Clamping ST to prevent abnormal values, suitable for LWMA-3
+	        if (timestamps[i] > prev_max_TS) {
+	            ST = timestamps[i] - prev_max_TS;
+	        } else {
+	            ST = 1; // Enforce minimum solvetime of 1 if out of order
+	        }
+	        ST = std::min(ST, 6 * T); // Cap ST to prevent excessive difficulty adjustments
+	        prev_max_TS = timestamps[i];
+
 	        L += ST * i;
+
+	        // Sum last 3 solvetime values
 	        if (i > N - 3) {
 	            sum_3_ST += ST;
 	        }
 	    }
 
+	    // Calculate next difficulty
 	    next_D = (cumulativeDifficulties[N] - cumulativeDifficulties[0]) * T * (N + 1) / (2 * L);
-	    next_D = (next_D * 99) / 100; // Apply a slight dampening factor
+	    next_D = (next_D * 99) / 100; // Slight dampening factor
 
 	    prev_D = cumulativeDifficulties[N] - cumulativeDifficulties[N - 1];
 	    next_D = std::clamp((uint64_t)(prev_D * 67 / 100), next_D, (uint64_t)(prev_D * 150 / 100)); // Cap increase
