@@ -82,7 +82,7 @@ namespace CryptoNote {
 			m_upgradeHeightV4 = 70;
 			m_upgradeHeightV5 = 90;
 			m_upgradeHeightV6 = 95;
-			m_upgradeHeightV7 = 200;
+			m_upgradeHeightV7 = 105;
 			m_blocksFileName = "testnet_" + m_blocksFileName;
 			m_blocksCacheFileName = "testnet_" + m_blocksCacheFileName;
 			m_blockIndexesFileName = "testnet_" + m_blockIndexesFileName;
@@ -231,8 +231,6 @@ bool Currency::getBlockReward(uint8_t blockMajorVersion, size_t medianSize, size
         logger(INFO) << "Block is too big";
         return false;
     }
-
-    logger(INFO) << "Calculated block reward: " << formatAmount(blockReward);
 
     uint64_t developerReward = 0;
     uint64_t minerReward = blockReward;
@@ -841,6 +839,8 @@ bool Currency::getBlockReward(uint8_t blockMajorVersion, size_t medianSize, size
 	    uint64_t minDifficulty = isTestnet() ? 1000 : 100000;
 	    return static_cast<difficulty_type>(std::max(nextDifficulty, static_cast<double>(minDifficulty)));
 	}
+
+
 
 	bool Currency::checkProofOfWorkV1(Crypto::cn_context& context, const Block& block, difficulty_type currentDiffic,
 		Crypto::Hash& proofOfWork) const {
