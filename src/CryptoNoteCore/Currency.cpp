@@ -207,162 +207,174 @@ bool Currency::getBlockReward(uint8_t blockMajorVersion, size_t medianSize, size
 		return maxSize;
 	}
 
-	bool Currency::constructMinerTx(uint8_t blockMajorVersion, uint32_t height, size_t medianSize, uint64_t alreadyGeneratedCoins, size_t currentBlockSize,
-    uint64_t fee, const AccountPublicAddress& minerAddress, Transaction& tx, Crypto::SecretKey& txKey, const BinaryArray& extraNonce/* = BinaryArray()*/, size_t maxOuts/* = 1*/) const {
+	bool Currency::constructMinerTx(uint8_t blockMajorVersion, uint32_t height, size_t medianSize, uint64_t alreadyGeneratedCoins,
+	                                size_t currentBlockSize, uint64_t fee,
+	                                const std::optional<AccountPublicAddress>& rewardAddress, // Optional reward address parameter
+	                                Transaction& tx, Crypto::SecretKey& txKey,
+	                                const BinaryArray& extraNonce, size_t maxOuts) const {
+	    tx.inputs.clear();
+	    tx.outputs.clear();
+	    tx.extra.clear();
 
-    tx.inputs.clear();
-    tx.outputs.clear();
-    tx.extra.clear();
+	    KeyPair txkey = generateKeyPair();
+	    addTransactionPublicKeyToExtra(tx.extra, txkey.publicKey);
+	    if (!extraNonce.empty()) {
+	        if (!addExtraNonceToTransactionExtra(tx.extra, extraNonce)) {
+	            return false;
+	        }
+	    }
 
-    KeyPair txkey = generateKeyPair();
-    addTransactionPublicKeyToExtra(tx.extra, txkey.publicKey);
-    if (!extraNonce.empty()) {
-        if (!addExtraNonceToTransactionExtra(tx.extra, extraNonce)) {
-            return false;
-        }
-    }
+	    BaseInput in;
+	    in.blockIndex = height;
 
-    BaseInput in;
-    in.blockIndex = height;
+	    uint64_t blockReward;
+	    int64_t emissionChange;
+	    if (!getBlockReward(blockMajorVersion, medianSize, currentBlockSize, alreadyGeneratedCoins, fee, blockReward, emissionChange)) {
+	        logger(INFO) << "Block is too big";
+	        return false;
+	    }
 
-    uint64_t blockReward;
-    int64_t emissionChange;
-    if (!getBlockReward(blockMajorVersion, medianSize, currentBlockSize, alreadyGeneratedCoins, fee, blockReward, emissionChange)) {
-        logger(INFO) << "Block is too big";
-        return false;
-    }
+	    uint64_t developerReward = 0;
+	    uint64_t minerReward = blockReward;
 
-    uint64_t developerReward = 0;
-    uint64_t minerReward = blockReward;
+	    if (blockMajorVersion >= 6) {
+	        // For block versions >=6, 10% of the block reward goes to the developer
+	        developerReward = blockReward / 10; // Integer division
+	        minerReward = blockReward - developerReward;
+	    } else {
+	        // Previous logic: every 10th block reward goes entirely to the developer
+	        if (height % CryptoNote::parameters::DEVELOPER_FEE_INTERVAL == 0) {
+	            developerReward = blockReward;
+	            minerReward = 0;
+	        } else {
+	            developerReward = 0;
+	            minerReward = blockReward;
+	        }
+	    }
 
-    if (blockMajorVersion >= 6) {
-        // For block versions >=6, 10% of the block reward goes to the developer
-        developerReward = blockReward / 10; // Integer division
-        minerReward = blockReward - developerReward;
-    } else {
-        // Previous logic: every 10th block reward goes entirely to the developer
-        if (height % CryptoNote::parameters::DEVELOPER_FEE_INTERVAL == 0) {
-            developerReward = blockReward;
-            minerReward = 0;
-        } else {
-            developerReward = 0;
-            minerReward = blockReward;
-        }
-    }
+	    // Declare and parse the developer address
+	    AccountPublicAddress developerAddress;
+	    if (!parseAccountAddressString(CryptoNote::parameters::DEVELOPER_ADDRESS, developerAddress)) {
+	        logger(ERROR, BRIGHT_RED) << "Failed to parse developer address";
+	        return false;
+	    }
 
-    AccountPublicAddress developerAddress;
-    if (!parseAccountAddressString(CryptoNote::parameters::DEVELOPER_ADDRESS, developerAddress)) {
-        logger(ERROR, BRIGHT_RED) << "Failed to parse developer address";
-        return false;
-    }
+	    AccountPublicAddress actualRewardAddress;
+	    if (rewardAddress.has_value()) {
+	        actualRewardAddress = rewardAddress.value();
+	    } else {
+	        logger(ERROR, BRIGHT_RED) << "Reward address is missing";
+	        return false;
+	    }
 
-    std::vector<uint64_t> minerOutAmounts;
-    std::vector<uint64_t> developerOutAmounts;
+	    std::vector<uint64_t> minerOutAmounts;
+	    std::vector<uint64_t> developerOutAmounts;
 
-    if (minerReward > 0) {
-        decompose_amount_into_digits(minerReward, UINT64_C(0),
-            [&minerOutAmounts](uint64_t a_chunk) { minerOutAmounts.push_back(a_chunk); },
-            [&minerOutAmounts](uint64_t a_dust) { minerOutAmounts.push_back(a_dust); });
+	    if (minerReward > 0) {
+	        decompose_amount_into_digits(minerReward, UINT64_C(0),
+	            [&minerOutAmounts](uint64_t a_chunk) { minerOutAmounts.push_back(a_chunk); },
+	            [&minerOutAmounts](uint64_t a_dust) { minerOutAmounts.push_back(a_dust); });
 
-        if (!(1 <= maxOuts)) { logger(ERROR, BRIGHT_RED) << "max_out must be non-zero"; return false; }
-        while (maxOuts < minerOutAmounts.size()) {
-            minerOutAmounts[minerOutAmounts.size() - 2] += minerOutAmounts.back();
-            minerOutAmounts.resize(minerOutAmounts.size() - 1);
-        }
-    }
+	        if (!(1 <= maxOuts)) { logger(ERROR, BRIGHT_RED) << "max_out must be non-zero"; return false; }
+	        while (maxOuts < minerOutAmounts.size()) {
+	            minerOutAmounts[minerOutAmounts.size() - 2] += minerOutAmounts.back();
+	            minerOutAmounts.resize(minerOutAmounts.size() - 1);
+	        }
+	    }
 
-    if (developerReward > 0) {
-        decompose_amount_into_digits(developerReward, UINT64_C(0),
-            [&developerOutAmounts](uint64_t a_chunk) { developerOutAmounts.push_back(a_chunk); },
-            [&developerOutAmounts](uint64_t a_dust) { developerOutAmounts.push_back(a_dust); });
+	    if (developerReward > 0) {
+	        decompose_amount_into_digits(developerReward, UINT64_C(0),
+	            [&developerOutAmounts](uint64_t a_chunk) { developerOutAmounts.push_back(a_chunk); },
+	            [&developerOutAmounts](uint64_t a_dust) { developerOutAmounts.push_back(a_dust); });
 
-        if (!(1 <= maxOuts)) { logger(ERROR, BRIGHT_RED) << "max_out must be non-zero"; return false; }
-        while (maxOuts < developerOutAmounts.size()) {
-            developerOutAmounts[developerOutAmounts.size() - 2] += developerOutAmounts.back();
-            developerOutAmounts.resize(developerOutAmounts.size() - 1);
-        }
-    }
+	        if (!(1 <= maxOuts)) { logger(ERROR, BRIGHT_RED) << "max_out must be non-zero"; return false; }
+	        while (maxOuts < developerOutAmounts.size()) {
+	            developerOutAmounts[developerOutAmounts.size() - 2] += developerOutAmounts.back();
+	            developerOutAmounts.resize(developerOutAmounts.size() - 1);
+	        }
+	    }
 
-    uint64_t summaryAmounts = 0;
-    size_t outputIndex = 0;
+	    uint64_t summaryAmounts = 0;
+	    size_t outputIndex = 0;
 
-    // Outputs to miner
-    for (size_t i = 0; i < minerOutAmounts.size(); i++, outputIndex++) {
-        Crypto::KeyDerivation derivation = boost::value_initialized<Crypto::KeyDerivation>();
-        Crypto::PublicKey outEphemeralPubKey = boost::value_initialized<Crypto::PublicKey>();
+	    // Outputs to miner
+	    for (size_t i = 0; i < minerOutAmounts.size(); i++, outputIndex++) {
+	        Crypto::KeyDerivation derivation = boost::value_initialized<Crypto::KeyDerivation>();
+	        Crypto::PublicKey outEphemeralPubKey = boost::value_initialized<Crypto::PublicKey>();
 
-        bool r = Crypto::generate_key_derivation(minerAddress.viewPublicKey, txkey.secretKey, derivation);
+	        bool r = Crypto::generate_key_derivation(actualRewardAddress.viewPublicKey, txkey.secretKey, derivation);
 
-        if (!(r)) {
-            logger(ERROR, BRIGHT_RED)
-                << "while creating outs: failed to generate_key_derivation("
-                << minerAddress.viewPublicKey << ", " << txkey.secretKey << ")";
-            return false;
-        }
+	        if (!(r)) {
+	            logger(ERROR, BRIGHT_RED)
+	                << "while creating outs: failed to generate_key_derivation("
+	                << actualRewardAddress.viewPublicKey << ", " << txkey.secretKey << ")";
+	            return false;
+	        }
 
-        r = Crypto::derive_public_key(derivation, outputIndex, minerAddress.spendPublicKey, outEphemeralPubKey);
+	        r = Crypto::derive_public_key(derivation, outputIndex, actualRewardAddress.spendPublicKey, outEphemeralPubKey);
 
-        if (!(r)) {
-            logger(ERROR, BRIGHT_RED)
-                << "while creating outs: failed to derive_public_key("
-                << derivation << ", " << outputIndex << ", "
-                << minerAddress.spendPublicKey << ")";
-            return false;
-        }
+	        if (!(r)) {
+	            logger(ERROR, BRIGHT_RED)
+	                << "while creating outs: failed to derive_public_key("
+	                << derivation << ", " << outputIndex << ", "
+	                << actualRewardAddress.spendPublicKey << ")";
+	            return false;
+	        }
 
-        KeyOutput tk;
-        tk.key = outEphemeralPubKey;
+	        KeyOutput tk;
+	        tk.key = outEphemeralPubKey;
 
-        TransactionOutput out;
-        summaryAmounts += out.amount = minerOutAmounts[i];
-        out.target = tk;
-        tx.outputs.push_back(out);
-    }
+	        TransactionOutput out;
+	        summaryAmounts += out.amount = minerOutAmounts[i];
+	        out.target = tk;
+	        tx.outputs.push_back(out);
+	    }
 
-    // Outputs to developer
-    for (size_t i = 0; i < developerOutAmounts.size(); i++, outputIndex++) {
-        Crypto::KeyDerivation derivation = boost::value_initialized<Crypto::KeyDerivation>();
-        Crypto::PublicKey outEphemeralPubKey = boost::value_initialized<Crypto::PublicKey>();
+	    // Outputs to developer
+	    for (size_t i = 0; i < developerOutAmounts.size(); i++, outputIndex++) {
+	        Crypto::KeyDerivation derivation = boost::value_initialized<Crypto::KeyDerivation>();
+	        Crypto::PublicKey outEphemeralPubKey = boost::value_initialized<Crypto::PublicKey>();
 
-        bool r = Crypto::generate_key_derivation(developerAddress.viewPublicKey, txkey.secretKey, derivation);
+	        bool r = Crypto::generate_key_derivation(developerAddress.viewPublicKey, txkey.secretKey, derivation);
 
-        if (!(r)) {
-            logger(ERROR, BRIGHT_RED)
-                << "while creating outs: failed to generate_key_derivation("
-                << developerAddress.viewPublicKey << ", " << txkey.secretKey << ")";
-            return false;
-        }
+	        if (!(r)) {
+	            logger(ERROR, BRIGHT_RED)
+	                << "while creating outs: failed to generate_key_derivation("
+	                << developerAddress.viewPublicKey << ", " << txkey.secretKey << ")";
+	            return false;
+	        }
 
-        r = Crypto::derive_public_key(derivation, outputIndex, developerAddress.spendPublicKey, outEphemeralPubKey);
+	        r = Crypto::derive_public_key(derivation, outputIndex, developerAddress.spendPublicKey, outEphemeralPubKey);
 
-        if (!(r)) {
-            logger(ERROR, BRIGHT_RED)
-                << "while creating outs: failed to derive_public_key("
-                << derivation << ", " << outputIndex << ", "
-                << developerAddress.spendPublicKey << ")";
-            return false;
-        }
+	        if (!(r)) {
+	            logger(ERROR, BRIGHT_RED)
+	                << "while creating outs: failed to derive_public_key("
+	                << derivation << ", " << outputIndex << ", "
+	                << developerAddress.spendPublicKey << ")";
+	            return false;
+	        }
 
-        KeyOutput tk;
-        tk.key = outEphemeralPubKey;
+	        KeyOutput tk;
+	        tk.key = outEphemeralPubKey;
 
-        TransactionOutput out;
-        summaryAmounts += out.amount = developerOutAmounts[i];
-        out.target = tk;
-        tx.outputs.push_back(out);
-    }
+	        TransactionOutput out;
+	        summaryAmounts += out.amount = developerOutAmounts[i];
+	        out.target = tk;
+	        tx.outputs.push_back(out);
+	    }
 
-    if (!(summaryAmounts == blockReward)) {
-        logger(ERROR, BRIGHT_RED) << "Failed to construct miner tx, summaryAmounts = " << summaryAmounts << " not equal blockReward = " << blockReward;
-        return false;
-    }
+	    if (!(summaryAmounts == blockReward)) {
+	        logger(ERROR, BRIGHT_RED) << "Failed to construct miner tx, summaryAmounts = " << summaryAmounts << " not equal blockReward = " << blockReward;
+	        return false;
+	    }
 
-    tx.version = CURRENT_TRANSACTION_VERSION;
-    // lock
-    tx.unlockTime = height + minedMoneyUnlockWindow();
-    tx.inputs.push_back(in);
-    return true;
-}
+	    tx.version = CURRENT_TRANSACTION_VERSION;
+	    tx.unlockTime = height + minedMoneyUnlockWindow();
+	    tx.inputs.push_back(in);
+	    return true;
+	}
+
+
 
 	bool Currency::isFusionTransaction(const std::vector<uint64_t>& inputsAmounts, const std::vector<uint64_t>& outputsAmounts, size_t size, uint32_t height) const {
 		if (height <= CryptoNote::parameters::UPGRADE_HEIGHT_V3 ? size > CryptoNote::parameters::CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_CURRENT * 30 / 100 : size > fusionTxMaxSize()) {

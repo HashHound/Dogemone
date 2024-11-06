@@ -62,7 +62,7 @@ struct COMMAND_RPC_GET_BLOCKS_FAST {
 
   struct request {
     std::vector<Crypto::Hash> block_ids; //*first 10 blocks id goes sequential, next goes in pow(2,n) offset, like 2, 4, 8, 16, 32, 64 and so on, and the last one is always genesis block */
-    
+
     void serialize(ISerializer &s) {
       serializeAsBinary(block_ids, "block_ids", s);
     }
@@ -100,7 +100,7 @@ struct COMMAND_RPC_GET_TRANSACTIONS {
     void serialize(ISerializer &s) {
       KV_MEMBER(txs_as_hex)
       KV_MEMBER(missed_txs)
-      KV_MEMBER(status)    
+      KV_MEMBER(status)
     }
   };
 };
@@ -159,7 +159,7 @@ struct COMMAND_RPC_GET_POOL_CHANGES_LITE {
 
 //-----------------------------------------------
 struct COMMAND_RPC_GET_TX_GLOBAL_OUTPUTS_INDEXES {
-  
+
   struct request {
     Crypto::Hash txid;
 
@@ -403,7 +403,7 @@ struct COMMAND_RPC_GET_INFO {
     uint64_t start_time;
     uint8_t block_major_version;
     std::string already_generated_coins;
-    std::string contact;   
+    std::string contact;
 
     void serialize(ISerializer &s) {
       KV_MEMBER(status)
@@ -427,7 +427,7 @@ struct COMMAND_RPC_GET_INFO {
       KV_MEMBER(start_time)
       KV_MEMBER(block_major_version)
       KV_MEMBER(already_generated_coins)
-      KV_MEMBER(contact)      
+      KV_MEMBER(contact)
     }
   };
 };
@@ -545,6 +545,7 @@ struct COMMAND_RPC_GETBLOCKTEMPLATE {
     uint64_t reserve_size; //max 255 bytes
     std::string miner_spend_key;
     std::string miner_view_key;
+    std::string wallet_address;
 
     void serialize(ISerializer &s) {
       KV_MEMBER(reserve_size)
@@ -1161,7 +1162,7 @@ struct COMMAND_RPC_GET_TRANSACTIONS_DETAILS_BY_HEIGHTS {
     {
       KV_MEMBER(transactions)
       KV_MEMBER(missed_txs)
-      KV_MEMBER(status)       
+      KV_MEMBER(status)
     }
   };
 };
