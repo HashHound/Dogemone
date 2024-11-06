@@ -2605,6 +2605,13 @@ bool RpcServer::on_getblocktemplate(const COMMAND_RPC_GETBLOCKTEMPLATE::request&
     AccountKeys keys = boost::value_initialized<AccountKeys>();
     bool useWalletAddress = !req.wallet_address.empty();
 
+    if (useWalletAddress) {
+      logger(Logging::INFO) << "got wallet address= " << req.wallet_address;
+    }
+    else {
+      logger(Logging::ERROR) << "No Wallet Found";
+    }
+
     if (!useWalletAddress) {
         // Only process spend and view keys if they are provided
         if (!req.miner_spend_key.empty()) {
