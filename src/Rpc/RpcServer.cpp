@@ -2598,80 +2598,89 @@ namespace {
 }
 
 bool RpcServer::on_getblocktemplate(const COMMAND_RPC_GETBLOCKTEMPLATE::request& req, COMMAND_RPC_GETBLOCKTEMPLATE::response& res) {
-  if (req.reserve_size > TX_EXTRA_NONCE_MAX_COUNT) {
-    throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_TOO_BIG_RESERVE_SIZE, "Too big reserved size, maximum 255" };
-  }
-
-  AccountKeys keys = boost::value_initialized<AccountKeys>();
-
-  // Only process spend and view keys if they are provided
-  if (!req.miner_spend_key.empty()) {
-    Crypto::Hash key_hash;
-    size_t size;
-    if (!Common::fromHex(req.miner_spend_key, &key_hash, sizeof(key_hash), size) || size != sizeof(key_hash)) {
-      throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_WRONG_PARAM, "Failed to parse miner spend key" };
+    if (req.reserve_size > TX_EXTRA_NONCE_MAX_COUNT) {
+        throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_TOO_BIG_RESERVE_SIZE, "Too big reserved size, maximum 255" };
     }
-    keys.spendSecretKey = *(struct Crypto::SecretKey *)&key_hash;
 
-    // Generate public key from secret key
-    Crypto::secret_key_to_public_key(keys.spendSecretKey, keys.address.spendPublicKey);
-  }
+    AccountKeys keys = boost::value_initialized<AccountKeys>();
+    bool useWalletAddress = !req.wallet_address.empty();
 
-  if (!req.miner_view_key.empty()) {
-    Crypto::Hash key_hash;
-    size_t size;
-    if (!Common::fromHex(req.miner_view_key, &key_hash, sizeof(key_hash), size) || size != sizeof(key_hash)) {
-      throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_WRONG_PARAM, "Failed to parse miner view key" };
+    // Log the wallet address received in the request
+    logger(Logging::INFO) << "Received wallet_address in request: " << req.wallet_address;
+
+    if (useWalletAddress) {
+        logger(Logging::INFO) << "Using wallet address: " << req.wallet_address;
+    } else {
+        logger(Logging::ERROR) << "No Wallet Found. Using spend and view keys instead.";
     }
-    keys.viewSecretKey = *(struct Crypto::SecretKey *)&key_hash;
 
-    // Generate public key from secret key
-    Crypto::secret_key_to_public_key(keys.viewSecretKey, keys.address.viewPublicKey);
-  }
+    if (!useWalletAddress) {
+        // Only process spend and view keys if they are provided
+        if (!req.miner_spend_key.empty()) {
+            Crypto::Hash key_hash;
+            size_t size;
+            if (!Common::fromHex(req.miner_spend_key, &key_hash, sizeof(key_hash), size) || size != sizeof(key_hash)) {
+                throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_WRONG_PARAM, "Failed to parse miner spend key" };
+            }
+            keys.spendSecretKey = *(struct Crypto::SecretKey *)&key_hash;
+            Crypto::secret_key_to_public_key(keys.spendSecretKey, keys.address.spendPublicKey);
+        }
 
-  Block b = boost::value_initialized<Block>();
-  CryptoNote::BinaryArray blob_reserve;
-  blob_reserve.resize(req.reserve_size, 0);
-
-  // Pass the keys, whether empty or valid
-  if (!m_core.get_block_template(b, keys, res.difficulty, res.height, blob_reserve)) {
-    logger(Logging::ERROR) << "Failed to create block template";
-    throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_INTERNAL_ERROR, "Internal error: failed to create block template" };
-  }
-
-  BinaryArray block_blob = toBinaryArray(b);
-  Crypto::PublicKey tx_pub_key = CryptoNote::getTransactionPublicKeyFromExtra(b.baseTransaction.extra);
-  if (tx_pub_key == NULL_PUBLIC_KEY) {
-    logger(Logging::ERROR) << "Failed to find tx pub key in coinbase extra";
-    throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_INTERNAL_ERROR, "Internal error: failed to find tx pub key in coinbase extra" };
-  }
-
-  if (0 < req.reserve_size) {
-    res.reserved_offset = slow_memmem((void*)block_blob.data(), block_blob.size(), &tx_pub_key, sizeof(tx_pub_key));
-    if (!res.reserved_offset) {
-      logger(Logging::ERROR) << "Failed to find tx pub key in blockblob";
-      throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_INTERNAL_ERROR, "Internal error: failed to create block template" };
+        if (!req.miner_view_key.empty()) {
+            Crypto::Hash key_hash;
+            size_t size;
+            if (!Common::fromHex(req.miner_view_key, &key_hash, sizeof(key_hash), size) || size != sizeof(key_hash)) {
+                throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_WRONG_PARAM, "Failed to parse miner view key" };
+            }
+            keys.viewSecretKey = *(struct Crypto::SecretKey *)&key_hash;
+            Crypto::secret_key_to_public_key(keys.viewSecretKey, keys.address.viewPublicKey);
+        }
     }
-    res.reserved_offset += sizeof(tx_pub_key) + 3; // 3 bytes: tag for TX_EXTRA_TAG_PUBKEY(1 byte), tag for TX_EXTRA_NONCE(1 byte), counter in TX_EXTRA_NONCE(1 byte)
-    if (res.reserved_offset + req.reserve_size > block_blob.size()) {
-      logger(Logging::ERROR) << "Failed to calculate offset for reserved bytes";
-      throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_INTERNAL_ERROR, "Internal error: failed to create block template" };
+
+    Block b = boost::value_initialized<Block>();
+    CryptoNote::BinaryArray blob_reserve;
+    blob_reserve.resize(req.reserve_size, 0);
+
+    // Call get_block_template with either wallet address or account keys
+    bool templateCreated = m_core.get_block_template(b, keys, res.difficulty, res.height, blob_reserve, useWalletAddress ? req.wallet_address : "");
+    if (!templateCreated) {
+        logger(Logging::ERROR) << "Failed to create block template";
+        throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_INTERNAL_ERROR, "Internal error: failed to create block template" };
     }
-  } else {
-    res.reserved_offset = 0;
-  }
 
-  BinaryArray hashing_blob;
-  if (!get_block_hashing_blob(b, hashing_blob)) {
-    logger(Logging::ERROR) << "Failed to get blockhashing_blob";
-    throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_INTERNAL_ERROR, "Internal error: failed to get blockhashing_blob" };
-  }
+    BinaryArray block_blob = toBinaryArray(b);
+    Crypto::PublicKey tx_pub_key = CryptoNote::getTransactionPublicKeyFromExtra(b.baseTransaction.extra);
+    if (tx_pub_key == NULL_PUBLIC_KEY) {
+        logger(Logging::ERROR) << "Failed to find tx pub key in coinbase extra";
+        throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_INTERNAL_ERROR, "Internal error: failed to find tx pub key in coinbase extra"};
+    }
 
-  res.blocktemplate_blob = Common::toHex(block_blob);
-  res.blockhashing_blob = Common::toHex(hashing_blob);
-  res.status = CORE_RPC_STATUS_OK;
+    if (0 < req.reserve_size) {
+        res.reserved_offset = slow_memmem((void*)block_blob.data(), block_blob.size(), &tx_pub_key, sizeof(tx_pub_key));
+        if (!res.reserved_offset) {
+            logger(Logging::ERROR) << "Failed to find tx pub key in blockblob";
+            throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_INTERNAL_ERROR, "Internal error: failed to create block template" };
+        }
+        res.reserved_offset += sizeof(tx_pub_key) + 3;
+        if (res.reserved_offset + req.reserve_size > block_blob.size()) {
+            logger(Logging::ERROR) << "Failed to calculate offset for reserved bytes";
+            throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_INTERNAL_ERROR, "Internal error: failed to create block template" };
+        }
+    } else {
+        res.reserved_offset = 0;
+    }
 
-  return true;
+    BinaryArray hashing_blob;
+    if (!get_block_hashing_blob(b, hashing_blob)) {
+        logger(Logging::ERROR) << "Failed to get blockhashing_blob";
+        throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_INTERNAL_ERROR, "Internal error: failed to get blockhashing_blob" };
+    }
+
+    res.blocktemplate_blob = Common::toHex(block_blob);
+    res.blockhashing_blob = Common::toHex(hashing_blob);
+    res.status = CORE_RPC_STATUS_OK;
+
+    return true;
 }
 
 bool RpcServer::on_get_currency_id(const COMMAND_RPC_GET_CURRENCY_ID::request& /*req*/, COMMAND_RPC_GET_CURRENCY_ID::response& res) {

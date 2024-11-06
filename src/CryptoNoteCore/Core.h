@@ -59,6 +59,7 @@ namespace CryptoNote {
      //-------------------- IMinerHandler -----------------------
      virtual bool handle_block_found(Block& b) override;
      virtual bool get_block_template(Block& b, const AccountKeys& acc, difficulty_type& diffic, uint32_t& height, const BinaryArray& ex_nonce) override;
+     bool get_block_template(Block& b, const AccountKeys& acc, difficulty_type& diffic, uint32_t& height, const BinaryArray& ex_nonce, const std::string& wallet_address);
      virtual bool getBlockLongHash(Crypto::cn_context &context, const Block& b, Crypto::Hash& res) override;
 
      bool addObserver(ICoreObserver* observer) override;

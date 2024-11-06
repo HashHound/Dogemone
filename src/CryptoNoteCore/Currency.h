@@ -21,6 +21,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <optional>
 #include <boost/utility.hpp>
 #include "../CryptoNoteConfig.h"
 #include "../crypto/hash.h"
@@ -147,8 +148,10 @@ public:
     uint64_t& reward, int64_t& emissionChange) const;
   size_t maxBlockCumulativeSize(uint64_t height) const;
 
-  bool constructMinerTx(uint8_t blockMajorVersion, uint32_t height, size_t medianSize, uint64_t alreadyGeneratedCoins, size_t currentBlockSize,
-    uint64_t fee, const AccountPublicAddress& minerAddress, Transaction& tx, Crypto::SecretKey& txKey, const BinaryArray& extraNonce = BinaryArray(), size_t maxOuts = 1) const;
+  bool constructMinerTx(uint8_t blockMajorVersion, uint32_t height, size_t medianSize, uint64_t alreadyGeneratedCoins,
+                        size_t currentBlockSize, uint64_t fee, const std::optional<AccountPublicAddress>& rewardAddress,
+                        Transaction& tx, Crypto::SecretKey& txKey, const BinaryArray& extraNonce = BinaryArray(),
+                        size_t maxOuts = 1) const;
 
   bool isFusionTransaction(const Transaction& transaction, uint32_t height) const;
   bool isFusionTransaction(const Transaction& transaction, size_t size, uint32_t height) const;

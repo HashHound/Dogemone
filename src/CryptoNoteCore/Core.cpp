@@ -501,127 +501,120 @@ bool Core::add_new_tx(const Transaction& tx, const Crypto::Hash& tx_hash, size_t
   return m_mempool.add_tx(tx, tx_hash, blob_size, tvc, keeped_by_block);
 }
 
-bool Core::get_block_template(Block& b, const AccountKeys& acc, difficulty_type& diffic, uint32_t& height, const BinaryArray& ex_nonce) {
-  size_t median_size;
-  uint64_t already_generated_coins;
+bool CryptoNote::Core::get_block_template(Block& b, const AccountKeys& acc, difficulty_type& diffic, uint32_t& height, const BinaryArray& ex_nonce) {
+    // Call the six-parameter version with an empty wallet address
+    return get_block_template(b, acc, diffic, height, ex_nonce, "");
+}
 
-  {
-    LockedBlockchainStorage blockchainLock(m_blockchain);
-    height = m_blockchain.getCurrentBlockchainHeight();
-    b = boost::value_initialized<Block>();
-    b.majorVersion = m_blockchain.getBlockMajorVersionForHeight(height);
-    b.previousBlockHash = get_tail_id();
-    b.timestamp = time(nullptr);
-    diffic = m_blockchain.getDifficultyForNextBlock(b.previousBlockHash);
-    if (!(diffic)) {
-      logger(ERROR, BRIGHT_RED) << "difficulty overhead.";
-      return false;
-    }
+bool Core::get_block_template(Block& b, const AccountKeys& acc, difficulty_type& diffic, uint32_t& height, const BinaryArray& ex_nonce, const std::string& wallet_address) {
+    size_t median_size;
+    uint64_t already_generated_coins;
 
-    if (b.majorVersion == BLOCK_MAJOR_VERSION_1) {
-      b.minorVersion = m_currency.upgradeHeight(BLOCK_MAJOR_VERSION_2) == UpgradeDetectorBase::UNDEF_HEIGHT ? BLOCK_MINOR_VERSION_1 : BLOCK_MINOR_VERSION_0;
-    } else if (b.majorVersion == BLOCK_MAJOR_VERSION_2 || b.majorVersion == BLOCK_MAJOR_VERSION_3) {
-      if (m_currency.upgradeHeight(BLOCK_MAJOR_VERSION_3) == UpgradeDetectorBase::UNDEF_HEIGHT) {
-        b.minorVersion = b.majorVersion == BLOCK_MAJOR_VERSION_2 ? BLOCK_MINOR_VERSION_1 : BLOCK_MINOR_VERSION_0;
-      } else {
-        b.minorVersion = BLOCK_MINOR_VERSION_0;
-      }
+    {
+        LockedBlockchainStorage blockchainLock(m_blockchain);
+        height = m_blockchain.getCurrentBlockchainHeight();
+        b = boost::value_initialized<Block>();
+        b.majorVersion = m_blockchain.getBlockMajorVersionForHeight(height);
+        b.previousBlockHash = get_tail_id();
+        b.timestamp = time(nullptr);
+        diffic = m_blockchain.getDifficultyForNextBlock(b.previousBlockHash);
 
-      b.parentBlock.majorVersion = BLOCK_MAJOR_VERSION_1;
-      b.parentBlock.majorVersion = BLOCK_MINOR_VERSION_0;
-      b.parentBlock.transactionCount = 1;
-      TransactionExtraMergeMiningTag mm_tag = boost::value_initialized<decltype(mm_tag)>();
-
-      if (!appendMergeMiningTagToExtra(b.parentBlock.baseTransaction.extra, mm_tag)) {
-        logger(ERROR, BRIGHT_RED) << "Failed to append merge mining tag to extra of the parent block miner transaction";
-        return false;
-      }
-    } else if (b.majorVersion == BLOCK_MAJOR_VERSION_4) {
-      b.minorVersion = m_currency.upgradeHeight(BLOCK_MAJOR_VERSION_4) == UpgradeDetectorBase::UNDEF_HEIGHT ? BLOCK_MINOR_VERSION_1 : BLOCK_MINOR_VERSION_0;
-    } else if (b.majorVersion >= BLOCK_MAJOR_VERSION_5) {
-      b.minorVersion = m_currency.upgradeHeight(BLOCK_MAJOR_VERSION_5) == UpgradeDetectorBase::UNDEF_HEIGHT ? BLOCK_MINOR_VERSION_1 : BLOCK_MINOR_VERSION_0;
-    } else if (b.majorVersion == BLOCK_MAJOR_VERSION_6) {
-    b.minorVersion = m_currency.upgradeHeight(BLOCK_MAJOR_VERSION_6) == UpgradeDetectorBase::UNDEF_HEIGHT ? BLOCK_MINOR_VERSION_1 : BLOCK_MINOR_VERSION_0;
-    } else if (b.majorVersion == BLOCK_MAJOR_VERSION_7) {
-    b.minorVersion = m_currency.upgradeHeight(BLOCK_MAJOR_VERSION_7) == UpgradeDetectorBase::UNDEF_HEIGHT ? BLOCK_MINOR_VERSION_1 : BLOCK_MINOR_VERSION_0;
-    }
-
-
-    // Don't generate a block template with invalid timestamp
-    // Fix by Jagerman
-    // https://github.com/graft-project/GraftNetwork/pull/118/commits
-
-    if(height >= m_currency.timestampCheckWindow(b.majorVersion)) {
-      std::vector<uint64_t> timestamps;
-      for(uint32_t offset = height - static_cast<uint32_t>(m_currency.timestampCheckWindow(b.majorVersion)); offset < height; ++offset) {
-        timestamps.push_back(m_blockchain.getBlockTimestamp(offset));
-      }
-      uint64_t median_ts = Common::medianValue(timestamps);
-      if (b.timestamp < median_ts) {
-          b.timestamp = median_ts;
-      }
-    }
-
-    median_size = m_blockchain.getCurrentCumulativeBlocksizeLimit() / 2;
-    already_generated_coins = m_blockchain.getCoinsInCirculation();
-  }
-
-  size_t txs_size;
-  uint64_t fee;
-  if (!m_mempool.fill_block_template(b, median_size, m_currency.maxBlockCumulativeSize(height), already_generated_coins, txs_size, fee)) {
-    return false;
-  }
-
-  Crypto::SecretKey tx_key;
-
-  /*
-     two-phase miner transaction generation: we don't know exact block size until we prepare block, but we don't know reward until we know
-     block size, so first miner transaction generated with fake amount of money, and with phase we know think we know expected block size
-     */
-  //make blocks coin-base tx looks close to real coinbase tx to get truthful blob size
-  bool r = m_currency.constructMinerTx(b.majorVersion, height, median_size, already_generated_coins, txs_size, fee, acc.address, b.baseTransaction, tx_key, ex_nonce, b.majorVersion >= BLOCK_MAJOR_VERSION_5 ? 1 : 14);
-  if (!r) {
-    logger(ERROR, BRIGHT_RED) << "Failed to construct miner tx, first chance";
-    return false;
-  }
-
-  size_t cumulative_size = txs_size + getObjectBinarySize(b.baseTransaction);
-  for (size_t try_count = 0; try_count != 10; ++try_count) {
-    r = m_currency.constructMinerTx(b.majorVersion, height, median_size, already_generated_coins, cumulative_size, fee, acc.address, b.baseTransaction, tx_key, ex_nonce, b.majorVersion >= BLOCK_MAJOR_VERSION_5 ? 1 : 14);
-
-    if (!(r)) { logger(ERROR, BRIGHT_RED) << "Failed to construct miner tx, second chance"; return false; }
-    size_t coinbase_blob_size = getObjectBinarySize(b.baseTransaction);
-    if (coinbase_blob_size > cumulative_size - txs_size) {
-      cumulative_size = txs_size + coinbase_blob_size;
-      continue;
-    }
-
-    if (coinbase_blob_size < cumulative_size - txs_size) {
-      size_t delta = cumulative_size - txs_size - coinbase_blob_size;
-      b.baseTransaction.extra.insert(b.baseTransaction.extra.end(), delta, 0);
-      //here  could be 1 byte difference, because of extra field counter is varint, and it can become from 1-byte len to 2-bytes len.
-      if (cumulative_size != txs_size + getObjectBinarySize(b.baseTransaction)) {
-        if (!(cumulative_size + 1 == txs_size + getObjectBinarySize(b.baseTransaction))) { logger(ERROR, BRIGHT_RED) << "unexpected case: cumulative_size=" << cumulative_size << " + 1 is not equal txs_cumulative_size=" << txs_size << " + get_object_blobsize(b.baseTransaction)=" << getObjectBinarySize(b.baseTransaction); return false; }
-        b.baseTransaction.extra.resize(b.baseTransaction.extra.size() - 1);
-        if (cumulative_size != txs_size + getObjectBinarySize(b.baseTransaction)) {
-          //fuck, not lucky, -1 makes varint-counter size smaller, in that case we continue to grow with cumulative_size
-          logger(TRACE, BRIGHT_RED) <<
-            "Miner tx creation have no luck with delta_extra size = " << delta << " and " << delta - 1;
-          cumulative_size += delta - 1;
-          continue;
+        if (!(diffic)) {
+            logger(ERROR, BRIGHT_RED) << "difficulty overhead.";
+            return false;
         }
-        logger(DEBUGGING, BRIGHT_GREEN) <<
-          "Setting extra for block: " << b.baseTransaction.extra.size() << ", try_count=" << try_count;
-      }
+
+        // Handle minor version based on major block versions
+        if (b.majorVersion == BLOCK_MAJOR_VERSION_1) {
+            b.minorVersion = m_currency.upgradeHeight(BLOCK_MAJOR_VERSION_2) == UpgradeDetectorBase::UNDEF_HEIGHT ? BLOCK_MINOR_VERSION_1 : BLOCK_MINOR_VERSION_0;
+        } else if (b.majorVersion >= BLOCK_MAJOR_VERSION_2) {
+            b.minorVersion = BLOCK_MINOR_VERSION_0;
+        }
+
+        if (height >= m_currency.timestampCheckWindow(b.majorVersion)) {
+            std::vector<uint64_t> timestamps;
+            for (uint32_t offset = height - static_cast<uint32_t>(m_currency.timestampCheckWindow(b.majorVersion)); offset < height; ++offset) {
+                timestamps.push_back(m_blockchain.getBlockTimestamp(offset));
+            }
+            uint64_t median_ts = Common::medianValue(timestamps);
+            if (b.timestamp < median_ts) {
+                b.timestamp = median_ts;
+            }
+        }
+
+        median_size = m_blockchain.getCurrentCumulativeBlocksizeLimit() / 2;
+        already_generated_coins = m_blockchain.getCoinsInCirculation();
     }
-    if (!(cumulative_size == txs_size + getObjectBinarySize(b.baseTransaction))) { logger(ERROR, BRIGHT_RED) << "unexpected case: cumulative_size=" << cumulative_size << " is not equal txs_cumulative_size=" << txs_size << " + get_object_blobsize(b.baseTransaction)=" << getObjectBinarySize(b.baseTransaction); return false; }
 
-    return true;
-  }
+    size_t txs_size;
+    uint64_t fee;
+    if (!m_mempool.fill_block_template(b, median_size, m_currency.maxBlockCumulativeSize(height), already_generated_coins, txs_size, fee)) {
+        return false;
+    }
 
-  logger(ERROR, BRIGHT_RED) <<
-    "Failed to create_block_template with " << 10 << " tries";
-  return false;
+    Crypto::SecretKey tx_key;
+
+    // Decide which reward address to use (parsed if wallet_address is provided)
+    AccountPublicAddress reward_address;
+    if (b.majorVersion >= BLOCK_MAJOR_VERSION_7 && !wallet_address.empty()) {
+        uint64_t prefix;  // Prefix variable for parseAccountAddressString
+        if (!parseAccountAddressString(prefix, reward_address, wallet_address)) {
+            logger(ERROR, BRIGHT_RED) << "Failed to parse wallet address";
+            return false;
+        }
+    } else {
+        reward_address = acc.address;
+    }
+
+    // Construct the miner transaction using the appropriate reward address
+    bool r = m_currency.constructMinerTx(b.majorVersion, height, median_size, already_generated_coins, txs_size, fee,
+                                         std::make_optional(reward_address), b.baseTransaction, tx_key, ex_nonce,
+                                         b.majorVersion >= BLOCK_MAJOR_VERSION_5 ? 1 : 14);
+    if (!r) {
+        logger(ERROR, BRIGHT_RED) << "Failed to construct miner tx, first attempt";
+        return false;
+    }
+
+    size_t cumulative_size = txs_size + getObjectBinarySize(b.baseTransaction);
+    for (size_t try_count = 0; try_count != 10; ++try_count) {
+      r = m_currency.constructMinerTx(b.majorVersion, height, median_size, already_generated_coins, cumulative_size, fee,
+                                      std::make_optional(reward_address), b.baseTransaction, tx_key, ex_nonce,
+                                      b.majorVersion >= BLOCK_MAJOR_VERSION_5 ? 1 : 14);
+
+        if (!r) {
+            logger(ERROR, BRIGHT_RED) << "Failed to construct miner tx, second attempt";
+            return false;
+        }
+
+        size_t coinbase_blob_size = getObjectBinarySize(b.baseTransaction);
+        if (coinbase_blob_size > cumulative_size - txs_size) {
+            cumulative_size = txs_size + coinbase_blob_size;
+            continue;
+        }
+
+        if (coinbase_blob_size < cumulative_size - txs_size) {
+            size_t delta = cumulative_size - txs_size - coinbase_blob_size;
+            b.baseTransaction.extra.insert(b.baseTransaction.extra.end(), delta, 0);
+            if (cumulative_size != txs_size + getObjectBinarySize(b.baseTransaction)) {
+                if (cumulative_size + 1 != txs_size + getObjectBinarySize(b.baseTransaction)) {
+                    logger(ERROR, BRIGHT_RED) << "Unexpected case in miner tx creation.";
+                    return false;
+                }
+                b.baseTransaction.extra.resize(b.baseTransaction.extra.size() - 1);
+                if (cumulative_size != txs_size + getObjectBinarySize(b.baseTransaction)) {
+                    logger(TRACE, BRIGHT_RED) << "Miner tx creation failed with extra size adjustments.";
+                    cumulative_size += delta - 1;
+                    continue;
+                }
+            }
+        }
+        if (cumulative_size == txs_size + getObjectBinarySize(b.baseTransaction)) {
+            return true;
+        }
+    }
+
+    logger(ERROR, BRIGHT_RED) << "Failed to create block template with multiple attempts.";
+    return false;
 }
 
 std::vector<Crypto::Hash> Core::findBlockchainSupplement(const std::vector<Crypto::Hash>& remoteBlockIds, size_t maxCount,
