@@ -2605,11 +2605,13 @@ bool RpcServer::on_getblocktemplate(const COMMAND_RPC_GETBLOCKTEMPLATE::request&
     AccountKeys keys = boost::value_initialized<AccountKeys>();
     bool useWalletAddress = !req.wallet_address.empty();
 
+    // Log the wallet address received in the request
+    logger(Logging::INFO) << "Received wallet_address in request: " << req.wallet_address;
+
     if (useWalletAddress) {
-      logger(Logging::INFO) << "got wallet address= " << req.wallet_address;
-    }
-    else {
-      logger(Logging::ERROR) << "No Wallet Found";
+        logger(Logging::INFO) << "Using wallet address: " << req.wallet_address;
+    } else {
+        logger(Logging::ERROR) << "No Wallet Found. Using spend and view keys instead.";
     }
 
     if (!useWalletAddress) {
@@ -2640,7 +2642,8 @@ bool RpcServer::on_getblocktemplate(const COMMAND_RPC_GETBLOCKTEMPLATE::request&
     blob_reserve.resize(req.reserve_size, 0);
 
     // Call get_block_template with either wallet address or account keys
-    if (!m_core.get_block_template(b, keys, res.difficulty, res.height, blob_reserve, useWalletAddress ? req.wallet_address : "")) {
+    bool templateCreated = m_core.get_block_template(b, keys, res.difficulty, res.height, blob_reserve, useWalletAddress ? req.wallet_address : "");
+    if (!templateCreated) {
         logger(Logging::ERROR) << "Failed to create block template";
         throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_INTERNAL_ERROR, "Internal error: failed to create block template" };
     }
@@ -2658,7 +2661,7 @@ bool RpcServer::on_getblocktemplate(const COMMAND_RPC_GETBLOCKTEMPLATE::request&
             logger(Logging::ERROR) << "Failed to find tx pub key in blockblob";
             throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_INTERNAL_ERROR, "Internal error: failed to create block template" };
         }
-        res.reserved_offset += sizeof(tx_pub_key) + 3; // 3 bytes: tag for TX_EXTRA_TAG_PUBKEY(1 byte), tag for TX_EXTRA_NONCE(1 byte), counter in TX_EXTRA_NONCE(1 byte)
+        res.reserved_offset += sizeof(tx_pub_key) + 3;
         if (res.reserved_offset + req.reserve_size > block_blob.size()) {
             logger(Logging::ERROR) << "Failed to calculate offset for reserved bytes";
             throw JsonRpc::JsonRpcError{ CORE_RPC_ERROR_CODE_INTERNAL_ERROR, "Internal error: failed to create block template" };

@@ -542,7 +542,7 @@ struct COMMAND_RPC_GETBLOCKHASH {
 
 struct COMMAND_RPC_GETBLOCKTEMPLATE {
   struct request {
-    uint64_t reserve_size; //max 255 bytes
+    uint64_t reserve_size; // max 255 bytes
     std::string miner_spend_key;
     std::string miner_view_key;
     std::string wallet_address;
@@ -551,6 +551,7 @@ struct COMMAND_RPC_GETBLOCKTEMPLATE {
       KV_MEMBER(reserve_size)
       KV_MEMBER(miner_spend_key)
       KV_MEMBER(miner_view_key)
+      KV_MEMBER(wallet_address)
     }
   };
 
@@ -559,7 +560,7 @@ struct COMMAND_RPC_GETBLOCKTEMPLATE {
     uint32_t height;
     uint64_t reserved_offset;
     std::string blocktemplate_blob;
-	std::string blockhashing_blob;
+    std::string blockhashing_blob;
     std::string status;
 
     void serialize(ISerializer &s) {
@@ -567,7 +568,7 @@ struct COMMAND_RPC_GETBLOCKTEMPLATE {
       KV_MEMBER(height)
       KV_MEMBER(reserved_offset)
       KV_MEMBER(blocktemplate_blob)
-	  KV_MEMBER(blockhashing_blob)
+      KV_MEMBER(blockhashing_blob)
       KV_MEMBER(status)
     }
   };
