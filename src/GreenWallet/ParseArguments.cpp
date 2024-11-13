@@ -157,7 +157,7 @@ Config parseArguments(int argc, char **argv)
 
 std::string getVersion()
 {
-    return WalletConfig::coinName + " v" + "2.5.0" + " "
+    return WalletConfig::coinName + " v" + "2.5.1" + " "
          + WalletConfig::walletName;
 }
 

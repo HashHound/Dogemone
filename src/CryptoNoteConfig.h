@@ -46,6 +46,7 @@ const uint64_t CRYPTONOTE_BLOCK_FUTURE_TIME_LIMIT = DIFFICULTY_TARGET * 7;
 const uint64_t CRYPTONOTE_BLOCK_FUTURE_TIME_LIMIT_V1 = DIFFICULTY_TARGET * 3;
 const size_t BLOCKCHAIN_TIMESTAMP_CHECK_WINDOW = 60;
 const size_t BLOCKCHAIN_TIMESTAMP_CHECK_WINDOW_V1 = 11;
+const std::string DNS_CHECKPOINTS_HOST = "dns.dogemone.online";
 
 // MONEY_SUPPLY - total number coins to be generated
 const uint64_t COIN = UINT64_C(1000000000000); // 1 coin = 10^12 atomic units

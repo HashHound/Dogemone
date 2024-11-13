@@ -79,7 +79,7 @@ namespace
     bool exit = false;
 
     if (command_line::get_arg(vm, command_line::arg_version)) {
-      std::cout << CryptoNote::CRYPTONOTE_NAME << " v" << "2.5.0" << ENDL;
+      std::cout << CryptoNote::CRYPTONOTE_NAME << " v" << "2.5.1" << ENDL;
       exit = true;
     }
     if (command_line::get_arg(vm, arg_os_version)) {
@@ -176,7 +176,7 @@ int main(int argc, char* argv[])
 
       if (command_line::get_arg(vm, command_line::arg_help))
       {
-        std::cout << CryptoNote::CRYPTONOTE_NAME << " v" << "2.5.0" << ENDL << ENDL;
+        std::cout << CryptoNote::CRYPTONOTE_NAME << " v" << "2.5.1" << ENDL << ENDL;
         std::cout << desc_options << std::endl;
         return false;
       }
@@ -221,7 +221,7 @@ int main(int argc, char* argv[])
     // configure logging
     logManager.configure(buildLoggerConfiguration(cfgLogLevel, cfgLogFile));
 
-    logger(INFO) << CryptoNote::CRYPTONOTE_NAME << " v. " << "2.5.0";
+    logger(INFO) << CryptoNote::CRYPTONOTE_NAME << " v. " << "2.5.1";
 
     if (command_line_preprocessor(vm, logger)) {
       return 0;
