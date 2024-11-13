@@ -35,6 +35,7 @@
 #include "Checkpoints.h"
 #include "../CryptoNoteConfig.h"
 #include "Common/StringTools.h"
+#include "Common/DnsTools.h"
 
 using namespace Logging;
 #undef ERROR
@@ -148,16 +149,14 @@ std::vector<uint32_t> Checkpoints::getCheckpointHeights() const {
   return checkpointHeights;
 }
 
-// Completely remove the DNS checkpoint loading function
-/*
 #ifndef __ANDROID__
 //---------------------------------------------------------------------------
-bool Checkpoints::load_checkpoints_from_dns()
-{
-  std::string domain(CryptoNote::parameters::DNS_CHECKPOINTS_HOST); // Ensure correct namespace
+// Re-enabled and modified DNS checkpoint loading function
+bool Checkpoints::load_checkpoints_from_dns() {
+  std::string domain(CryptoNote::parameters::DNS_CHECKPOINTS_HOST);
   if (domain.empty()) {
     logger(Logging::DEBUGGING) << "DNS checkpoints are not configured.";
-    return true; // Continue without DNS checkpoints
+    return true;
   }
 
   std::vector<std::string> records;
@@ -167,13 +166,10 @@ bool Checkpoints::load_checkpoints_from_dns()
 
   try {
     auto future = std::async(std::launch::async, [this, &res, &domain, &records]() {
-      res = Common::fetch_dns_txt(domain, records);
+      res = Common::fetch_dns_txt(domain, records);  // Fetch TXT records
     });
 
-    std::future_status status;
-
-    status = future.wait_for(std::chrono::milliseconds(200));
-
+    std::future_status status = future.wait_for(std::chrono::milliseconds(200));
     if (status == std::future_status::timeout) {
       logger(Logging::DEBUGGING) << "Timeout lookup DNS checkpoint records from " << domain;
       return false;
@@ -189,32 +185,44 @@ bool Checkpoints::load_checkpoints_from_dns()
   auto dur = std::chrono::steady_clock::now() - start;
   logger(Logging::DEBUGGING) << "DNS query time: " << std::chrono::duration_cast<std::chrono::milliseconds>(dur).count() << " ms";
 
-  for (const auto& record : records) {
-    uint32_t height;
-    Crypto::Hash hash = NULL_HASH;
-    std::stringstream ss;
-    size_t del = record.find_first_of(':');
-    std::string height_str = record.substr(0, del), hash_str = record.substr(del + 1, 64);
-    ss.str(height_str);
-    ss >> height;
-    char c;
-    if (del == std::string::npos) continue;
-    if ((ss.fail() || ss.get(c)) || !Common::podFromHex(hash_str, hash)) {
-      logger(Logging::DEBUGGING) << "Failed to parse DNS checkpoint record: " << record;
-      continue;
-    }
+  if (!records.empty()) {
+    std::string combined_record = records[0];
+    std::stringstream ss(combined_record);
+    std::string checkpoint_str;
 
-    if (!(0 == m_points.count(height))) {
-      logger(DEBUGGING) << "Checkpoint already exists for height: " << height << ". Ignoring DNS checkpoint.";
-    } else {
-      add_checkpoint(height, hash_str);
-      logger(DEBUGGING) << "Added DNS checkpoint: " << height_str << ":" << hash_str;
+    while (std::getline(ss, checkpoint_str, ';')) {
+      size_t delimiter_pos = checkpoint_str.find(':');
+      if (delimiter_pos == std::string::npos) {
+        logger(Logging::ERROR) << "Invalid checkpoint format in DNS record: " << checkpoint_str;
+        continue;
+      }
+
+      uint32_t height;
+      std::string height_str = checkpoint_str.substr(0, delimiter_pos);
+      std::string hash_str = checkpoint_str.substr(delimiter_pos + 1);
+
+      std::stringstream height_ss(height_str);
+      height_ss >> height;
+
+      Crypto::Hash hash = NULL_HASH;
+      if (!height_ss.fail() && Common::podFromHex(hash_str, hash)) {
+        std::string hash_hex_str = Common::podToHex(hash);  // Convert Crypto::Hash to string
+        if (m_points.count(height) == 0) {
+          add_checkpoint(height, hash_hex_str);  // Add checkpoint
+          logger(DEBUGGING) << "Added DNS checkpoint: " << height << ":" << hash_hex_str;
+        } else {
+          logger(DEBUGGING) << "Checkpoint already exists for height " << height << ", skipping.";
+        }
+      } else {
+        logger(Logging::ERROR) << "Failed to parse DNS checkpoint: " << checkpoint_str;
+      }
     }
+    return true;
+  } else {
+    logger(Logging::ERROR) << "No DNS records found for checkpoints.";
+    return false;
   }
-
-  return true;
 }
 #endif
-*/
 
 }
