@@ -852,184 +852,184 @@ bool Blockchain::rollback_blockchain_switching(std::list<Block> &original_chain,
 }
 
 bool Blockchain::switch_to_alternative_blockchain(const std::list<Crypto::Hash>& alt_chain, bool discard_disconnected_chain) {
-  std::lock_guard<decltype(m_blockchain_lock)> lk(m_blockchain_lock);
+    std::lock_guard<decltype(m_blockchain_lock)> lk(m_blockchain_lock);
 
-  if (!(alt_chain.size())) {
-    logger(ERROR, BRIGHT_RED) << "switch_to_alternative_blockchain: empty chain passed";
-    return false;
-  }
-
-  size_t split_height = static_cast<size_t>(m_alternative_chains[alt_chain.front()].height);
-
-  if (!(m_blocks.size() > split_height)) {
-    logger(ERROR, BRIGHT_RED) << "switch_to_alternative_blockchain: blockchain size is lower than split height";
-    return false;
-  }
-
-  // Check that block major version matches
-  for (const auto& hash : alt_chain) {
-    const Block& b = m_alternative_chains[hash].bl;
-    if (!checkBlockVersion(b))
-    {
-      logger(ERROR, BRIGHT_RED) << "switch_to_alternative_blockchain: wrong major version of block " << hash;
-      return false;
-    }
-  }
-
-  // Poisson check, courtesy of ryo-project
-  // https://github.com/ryo-currency/ryo-writeups/blob/master/poisson-writeup.md
-  // For longer reorgs, check if the timestamps are probable - if they aren't the diff algo has failed
-  // This check is meant to detect an offline bypass of timestamp < time() + ftl check
-  // It doesn't need to be very strict as it synergises with the median check
-  if (alt_chain.size() >= CryptoNote::parameters::POISSON_CHECK_TRIGGER)
-  {
-    uint64_t alt_chain_size = alt_chain.size();
-    uint64_t high_timestamp = m_alternative_chains[alt_chain.back()].bl.timestamp;
-    Crypto::Hash low_block = m_alternative_chains[alt_chain.front()].bl.previousBlockHash;
-
-    //Make sure that the high_timestamp is really highest
-    for (const auto& hash : alt_chain)
-    {
-      if (high_timestamp < m_alternative_chains[hash].bl.timestamp)
-          high_timestamp = m_alternative_chains[hash].bl.timestamp;
+    if (!(alt_chain.size())) {
+        logger(ERROR, BRIGHT_RED) << "switch_to_alternative_blockchain: empty chain passed";
+        return false;
     }
 
-    uint64_t block_ftl = CryptoNote::parameters::CRYPTONOTE_BLOCK_FUTURE_TIME_LIMIT_V1;
-    // This would fail later anyway
-    if (high_timestamp > get_adjusted_time() + block_ftl)
-    {
-      logger(ERROR, BRIGHT_RED) << "Attempting to move to an alternate chain, but it failed FTL check! Timestamp: " << high_timestamp << ", limit: " << get_adjusted_time() + block_ftl;
-      return false;
+    size_t split_height = static_cast<size_t>(m_alternative_chains[alt_chain.front()].height);
+
+    if (!(m_blocks.size() > split_height)) {
+        logger(ERROR, BRIGHT_RED) << "switch_to_alternative_blockchain: blockchain size is lower than split height";
+        return false;
     }
 
-    logger(WARNING) << "Poisson check triggered by reorg size of " << alt_chain_size;
-
-    uint64_t failed_checks = 0, i = 1;
-    for (; i <= CryptoNote::parameters::POISSON_CHECK_DEPTH; i++)
-    {
-      // This means we reached the genesis block
-      if (low_block == NULL_HASH)
-        break;
-
-      Block blk;
-      getBlockByHash(low_block, blk);
-
-      uint64_t low_timestamp = blk.timestamp;
-      low_block = blk.previousBlockHash;
-
-      if (low_timestamp >= high_timestamp)
-      {
-        logger(INFO) << "Skipping check at depth " << i << " due to tampered timestamp on main chain.";
-        failed_checks++;
-        continue;
-      }
-
-      double lam = double(high_timestamp - low_timestamp) / double(CryptoNote::parameters::DIFFICULTY_TARGET);
-      if (calc_poisson_ln(lam, alt_chain_size + i) < CryptoNote::parameters::POISSON_LOG_P_REJECT)
-      {
-        logger(INFO) << "Poisson check at depth " << i << " failed! delta_t: " << (high_timestamp - low_timestamp) << " size: " << alt_chain_size + i;
-        failed_checks++;
-      }
-    }
-
-    i--; //Convert to number of checks
-    logger(INFO) << "Poisson check result " << failed_checks << " fails out of " << i;
-
-    if (failed_checks > i / 2)
-    {
-      logger(ERROR, BRIGHT_RED) << "Attempting to move to an alternate chain, but it failed Poisson check! " << failed_checks << " fails out of " << i << " alt_chain_size: " << alt_chain_size;
-      return false;
-    }
-  }
-
-  // Compare transactions in proposed alt chain vs current main chain and reject if some transaction is missing in the alt chain
-  std::vector<Crypto::Hash> mainChainTxHashes, altChainTxHashes;
-  for (size_t i = m_blocks.size() - 1; i >= split_height; i--) {
-    Block b = m_blocks[i].bl;
-    std::copy(b.transactionHashes.begin(), b.transactionHashes.end(), std::inserter(mainChainTxHashes, mainChainTxHashes.end()));
-  }
-  for (const auto& hash : alt_chain) {
-    const Block& b = m_alternative_chains[hash].bl;
-    std::copy(b.transactionHashes.begin(), b.transactionHashes.end(), std::inserter(altChainTxHashes, altChainTxHashes.end()));
-  }
-
-  for (const auto& tx_hash : mainChainTxHashes) {
-    if (std::find(altChainTxHashes.begin(), altChainTxHashes.end(), tx_hash) == altChainTxHashes.end()) {
-      logger(ERROR, BRIGHT_RED) << "Attempting to switch to an alternate chain, but it lacks transaction " << Common::podToHex(tx_hash) << " from main chain, rejected";
-      return false;
-    }
-  }
-
-  //disconnecting old chain
-  std::list<Block> disconnected_chain;
-  for (size_t i = m_blocks.size() - 1; i >= split_height; i--) {
-    Block b = m_blocks[i].bl;
-    popBlock();
-    //if (!(r)) { logger(ERROR, BRIGHT_RED) << "failed to remove block on chain switching"; return false; }
-    disconnected_chain.push_front(b);
-  }
-
-  //connecting new alternative chain
-  for (auto alt_ch_iter = alt_chain.begin(); alt_ch_iter != alt_chain.end(); alt_ch_iter++) {
-    const auto& ch_ent_h = *alt_ch_iter;
-    block_verification_context bvc = boost::value_initialized<block_verification_context>();
-    const Block& b = m_alternative_chains[ch_ent_h].bl;
-    bool r = pushBlock(b, get_block_hash(b), bvc);
-    if (!r || !bvc.m_added_to_main_chain) {
-      logger(INFO, BRIGHT_WHITE) << "Failed to switch to alternative blockchain";
-      rollback_blockchain_switching(disconnected_chain, split_height);
-      logger(INFO, BRIGHT_WHITE) << "The block was inserted as invalid while connecting new alternative chain,  block_id: " << ch_ent_h;
-      m_orphanBlocksIndex.remove(b);
-      m_alternative_chains.erase(ch_ent_h);
-      try {
-        for (auto& alt_ch_to_orph_iter = ++alt_ch_iter; alt_ch_to_orph_iter != alt_chain.end(); alt_ch_to_orph_iter++) {
-          const auto& ch_ent_hh = *alt_ch_to_orph_iter;
-          const Block& bb = m_alternative_chains[ch_ent_hh].bl;
-          m_orphanBlocksIndex.remove(bb);
-          m_alternative_chains.erase(ch_ent_hh);
+    // Check that block major version matches
+    for (const auto& hash : alt_chain) {
+        const Block& b = m_alternative_chains[hash].bl;
+        if (!checkBlockVersion(b)) {
+            logger(ERROR, BRIGHT_RED) << "switch_to_alternative_blockchain: wrong major version of block " << hash;
+            return false;
         }
-      }
-      catch (std::exception& e) {
-        logger(ERROR) << "removing alt_chain entries while connecting new alternative chain failed: " << e.what();
-      }
-
-      return false;
     }
-  }
 
-  if (!discard_disconnected_chain) {
-    //pushing old chain as alternative chain
-    for (const auto& old_ch_ent : disconnected_chain) {
-      block_verification_context bvc = boost::value_initialized<block_verification_context>();
-      bool r = handle_alternative_block(old_ch_ent, get_block_hash(old_ch_ent), bvc, false);
-      if (!r) {
-        logger(WARNING, BRIGHT_YELLOW) << ("Failed to push ex-main chain blocks to alternative chain ");
-        break;
-      }
+    // Calculate cumulative difficulty for the alternative chain
+    uint64_t alt_chain_difficulty = 0;
+    for (const auto& hash : alt_chain) {
+    alt_chain_difficulty += m_alternative_chains[hash].cumulative_difficulty;  // Corrected member name
     }
-  }
 
-  std::vector<Crypto::Hash> blocksFromCommonRoot;
-  blocksFromCommonRoot.reserve(alt_chain.size() + 1);
-  const Block& b = m_alternative_chains[alt_chain.front()].bl;
-  blocksFromCommonRoot.push_back(b.previousBlockHash);
-
-  //removing alt_chain entries from alternative chain
-  try {
-    for (const auto& ch_ent : alt_chain) {
-      const Block& bl = m_alternative_chains[ch_ent].bl;
-      blocksFromCommonRoot.push_back(get_block_hash(bl));
-      m_orphanBlocksIndex.remove(bl);
-      m_alternative_chains.erase(ch_ent);
+    // Compare cumulative difficulties and reject if the alternative chain is weaker
+    uint64_t main_chain_difficulty = m_blocks.back().cumulative_difficulty;  // Corrected member name
+    if (alt_chain_difficulty <= main_chain_difficulty) {
+    logger(INFO) << "Alternative chain rejected due to lower cumulative difficulty: "
+                 << alt_chain_difficulty << " vs main chain difficulty " << main_chain_difficulty;
+    return false;
     }
-  } catch (std::exception& e) {
-    logger(ERROR) << "removing alt_chain entries from alternative chain failed: " << e.what();
-  }
 
-  sendMessage(BlockchainMessage(ChainSwitchMessage(std::move(blocksFromCommonRoot))));
+    // Adjusted Poisson check parameters
+    uint64_t alt_chain_size = alt_chain.size();
+    if (alt_chain_size >= CryptoNote::parameters::POISSON_CHECK_TRIGGER) {
+        uint64_t high_timestamp = m_alternative_chains[alt_chain.back()].bl.timestamp;
+        Crypto::Hash low_block = m_alternative_chains[alt_chain.front()].bl.previousBlockHash;
 
-  logger(INFO, BRIGHT_GREEN) << "REORGANIZE SUCCESS! on height: " << split_height << ", new blockchain size: " << m_blocks.size();
-  return true;
+        for (const auto& hash : alt_chain) {
+            if (high_timestamp < m_alternative_chains[hash].bl.timestamp)
+                high_timestamp = m_alternative_chains[hash].bl.timestamp;
+        }
+
+        uint64_t block_ftl = CryptoNote::parameters::CRYPTONOTE_BLOCK_FUTURE_TIME_LIMIT_V1;
+        if (high_timestamp > get_adjusted_time() + block_ftl) {
+            logger(ERROR, BRIGHT_RED) << "Attempting to move to an alternate chain, but it failed FTL check! Timestamp: "
+                                      << high_timestamp << ", limit: " << get_adjusted_time() + block_ftl;
+            return false;
+        }
+
+        logger(WARNING) << "Poisson check triggered by reorg size of " << alt_chain_size;
+
+        uint64_t failed_checks = 0, i = 1;
+        for (; i <= CryptoNote::parameters::POISSON_CHECK_DEPTH; i++) {
+            if (low_block == NULL_HASH)
+                break;
+
+            Block blk;
+            getBlockByHash(low_block, blk);
+
+            uint64_t low_timestamp = blk.timestamp;
+            low_block = blk.previousBlockHash;
+
+            if (low_timestamp >= high_timestamp) {
+                logger(INFO) << "Skipping check at depth " << i << " due to tampered timestamp on main chain.";
+                failed_checks++;
+                continue;
+            }
+
+            // Adjusted Poisson threshold to be slightly less restrictive
+            double lam = double(high_timestamp - low_timestamp) / double(CryptoNote::parameters::DIFFICULTY_TARGET);
+            if (calc_poisson_ln(lam, alt_chain_size + i) < CryptoNote::parameters::POISSON_LOG_P_REJECT - 1) {  // Adjusted threshold
+                logger(INFO) << "Poisson check at depth " << i << " failed! delta_t: " << (high_timestamp - low_timestamp)
+                             << " size: " << alt_chain_size + i;
+                failed_checks++;
+            }
+        }
+
+        i--; // Convert to number of checks
+        logger(INFO) << "Poisson check result " << failed_checks << " fails out of " << i;
+
+        if (failed_checks > i / 2) {
+            logger(ERROR, BRIGHT_RED) << "Attempting to move to an alternate chain, but it failed Poisson check! "
+                                      << failed_checks << " fails out of " << i << " alt_chain_size: " << alt_chain_size;
+            return false;
+        }
+    }
+
+    // Transaction consistency check between main chain and alternative chain
+    std::vector<Crypto::Hash> mainChainTxHashes, altChainTxHashes;
+    for (size_t i = m_blocks.size() - 1; i >= split_height; i--) {
+        Block b = m_blocks[i].bl;
+        std::copy(b.transactionHashes.begin(), b.transactionHashes.end(), std::inserter(mainChainTxHashes, mainChainTxHashes.end()));
+    }
+    for (const auto& hash : alt_chain) {
+        const Block& b = m_alternative_chains[hash].bl;
+        std::copy(b.transactionHashes.begin(), b.transactionHashes.end(), std::inserter(altChainTxHashes, altChainTxHashes.end()));
+    }
+
+    for (const auto& tx_hash : mainChainTxHashes) {
+        if (std::find(altChainTxHashes.begin(), altChainTxHashes.end(), tx_hash) == altChainTxHashes.end()) {
+            logger(ERROR, BRIGHT_RED) << "Attempting to switch to an alternate chain, but it lacks transaction "
+                                      << Common::podToHex(tx_hash) << " from main chain, rejected";
+            return false;
+        }
+    }
+
+    // Disconnect old chain
+    std::list<Block> disconnected_chain;
+    for (size_t i = m_blocks.size() - 1; i >= split_height; i--) {
+        Block b = m_blocks[i].bl;
+        popBlock();
+        disconnected_chain.push_front(b);
+    }
+
+    // Connect new alternative chain
+    for (auto alt_ch_iter = alt_chain.begin(); alt_ch_iter != alt_chain.end(); alt_ch_iter++) {
+        const auto& ch_ent_h = *alt_ch_iter;
+        block_verification_context bvc = boost::value_initialized<block_verification_context>();
+        const Block& b = m_alternative_chains[ch_ent_h].bl;
+        bool r = pushBlock(b, get_block_hash(b), bvc);
+        if (!r || !bvc.m_added_to_main_chain) {
+            logger(INFO, BRIGHT_WHITE) << "Failed to switch to alternative blockchain";
+            rollback_blockchain_switching(disconnected_chain, split_height);
+            logger(INFO, BRIGHT_WHITE) << "The block was inserted as invalid while connecting new alternative chain,  block_id: " << ch_ent_h;
+            m_orphanBlocksIndex.remove(b);
+            m_alternative_chains.erase(ch_ent_h);
+
+            try {
+                for (auto& alt_ch_to_orph_iter = ++alt_ch_iter; alt_ch_to_orph_iter != alt_chain.end(); alt_ch_to_orph_iter++) {
+                    const auto& ch_ent_hh = *alt_ch_to_orph_iter;
+                    const Block& bb = m_alternative_chains[ch_ent_hh].bl;
+                    m_orphanBlocksIndex.remove(bb);
+                    m_alternative_chains.erase(ch_ent_hh);
+                }
+            } catch (std::exception& e) {
+                logger(ERROR) << "removing alt_chain entries while connecting new alternative chain failed: " << e.what();
+            }
+
+            return false;
+        }
+    }
+
+    if (!discard_disconnected_chain) {
+        for (const auto& old_ch_ent : disconnected_chain) {
+            block_verification_context bvc = boost::value_initialized<block_verification_context>();
+            bool r = handle_alternative_block(old_ch_ent, get_block_hash(old_ch_ent), bvc, false);
+            if (!r) {
+                logger(WARNING, BRIGHT_YELLOW) << "Failed to push ex-main chain blocks to alternative chain ";
+                break;
+            }
+        }
+    }
+
+    std::vector<Crypto::Hash> blocksFromCommonRoot;
+    blocksFromCommonRoot.reserve(alt_chain.size() + 1);
+    const Block& b = m_alternative_chains[alt_chain.front()].bl;
+    blocksFromCommonRoot.push_back(b.previousBlockHash);
+
+    try {
+        for (const auto& ch_ent : alt_chain) {
+            const Block& bl = m_alternative_chains[ch_ent].bl;
+            blocksFromCommonRoot.push_back(get_block_hash(bl));
+            m_orphanBlocksIndex.remove(bl);
+            m_alternative_chains.erase(ch_ent);
+        }
+    } catch (std::exception& e) {
+        logger(ERROR) << "removing alt_chain entries from alternative chain failed: " << e.what();
+    }
+
+    sendMessage(BlockchainMessage(ChainSwitchMessage(std::move(blocksFromCommonRoot))));
+    logger(INFO, BRIGHT_GREEN) << "REORGANIZE SUCCESS! on height: " << split_height << ", new blockchain size: " << m_blocks.size();
+    return true;
 }
 
 bool Blockchain::prevalidate_miner_transaction(const Block& b, uint32_t height) {
